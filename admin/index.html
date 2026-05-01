@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Admin - Myke Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding:20px;
+  background:#f1f5f9;
+  color:#0f172a;
+}
+
+h1{
+  text-align:center;
+  margin-bottom:20px;
+  font-weight:700;
+}
+
+/* Contenedores */
+#adminPanel{
+  background:white;
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+/* Tablas */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:20px;
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+}
+
+th,td{
+  padding:10px;
+  text-align:left;
+  vertical-align:middle;
+}
+
+th{
+  background:#0f172a;
+  color:white;
+  font-weight:600;
+}
+
+tr:nth-child(even){
+  background:#f8fafc;
+}
+
+/* Inputs */
+input, select{
+  width:100%;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid #cbd5e1;
+}
+
+/* Checkbox Activo */
+.activeInput{
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+
+/* Botones */
+button{
+  padding:7px 12px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+  transition:all .2s ease;
+}
+
+button:hover{
+  transform:translateY(-1px);
+  opacity:.95;
+}
+
+/* Botones específicos */
+.saveBtn{
+  background:#22c55e;
+  color:white;
+}
+
+.deleteBtn{
+  background:#ef4444;
+  color:white;
+}
+
+#newProductBtn{
+  background:#0ea5e9;
+  color:white;
+}
+
+#saveAllBtn{
+  background:#6366f1;
+  color:white;
+}
+
+/* Imágenes */
+img.product-img{
+  width:80px;
+  height:50px;
+  object-fit:contain;
+  background:white;
+  border-radius:6px;
+}
+
+/* Login */
+#loginForm{
+  max-width:320px;
+  margin:80px auto;
+  padding:25px;
+  background:white;
+  border-radius:16px;
+  box-shadow:0 15px 30px rgba(0,0,0,.15);
+  text-align:center;
+}
+
+  .admin-tabs{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:20px;
+}
+
+.admin-tabs button{
+  background:#e2e8f0;
+  color:#0f172a;
+}
+
+.admin-tabs button:hover{
+  background:#c7d2fe;
+}
+
+
+  @media(max-width:768px){
+  table{
+    font-size:13px;
+  }
+
+  h1{
+    font-size:20px;
+  }
+
+  button{
+    padding:6px 8px;
+  }
+}
+
+  </style>
+</head>
+<body>
+
+<div id="loginForm">
+  <h2>🔒 Admin Login</h2>
+  <input type="text" id="username" placeholder="Usuario"><br>
+  <input type="password" id="password" placeholder="Contraseña"><br>
+  <button id="loginBtn">Ingresar</button>
+  <p id="loginError" style="color:red"></p>
+</div>
+
+<div id="adminPanel" style="display:none">
+  <h1>📦 Panel Admin</h1>
+  <!-- 🔀 MENÚ ADMIN -->
+<div id="adminMenu" class="admin-tabs">
+  <button onclick="showSection('productsSection')">📦 Productos</button>
+  <button onclick="showSection('ordersSection')">🧾 Pedidos</button>
+</div>
+<div id="productsSection">
+  <button id="newProductBtn" onclick="createNewProduct()">➕ Crear Nuevo Producto</button>
+  <button id="saveAllBtn" style="margin:15px 0;padding:8px 14px;">
+  💾 Guardar todos los cambios
+</button>
+
+<!-- 📊 Barra de progreso de importación -->
+<div id="importProgress" style="display:none;margin:15px 0">
+  <div id="progressText" style="font-size:13px;margin-bottom:6px">
+    Importando 0 de 0
+  </div>
+
+  <div style="background:#e5e7eb;border-radius:10px;height:10px">
+    <div
+      id="progressBar"
+      style="height:10px;width:0%;background:#22c55e;border-radius:10px">
+    </div>
+  </div>
+</div>
+
+
+  
+<button
+  onclick="document.getElementById('excelInput').click()"
+  style="margin:10px 0;padding:8px 14px;background:#22c55e;color:white;border:none;border-radius:8px"
+>
+  📥 Importar productos desde Excel
+</button>
+
+<button
+  onclick="downloadProductTemplate()"
+  style="margin:10px 0;padding:8px 14px;background:#64748b;color:white;border:none;border-radius:8px"
+>
+  📄 Descargar plantilla Excel
+</button>
+
+
+<input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none">
+
+  
+<table>
+    <thead>
+      <tr>
+        <th>Imagen</th>
+        <th>Nombre</th>
+        <th>Código</th>
+        <th>Categoría</th>
+        <th>Precio</th>
+        <th>Costo</th>
+        <th>Precio Desc.</th>
+        <th>Stock</th>
+        <th>Unidades Compra</th>
+        <th>Costo Total Compra</th>
+        <th>Activo</th>
+        <th>Guardar</th>
+        <th>Eliminar</th>
+      </tr>
+    </thead>
+    <tbody id="productsTable"></tbody>
+  </table>
+</div>
+
+<!-- 🧾 SECCIÓN PEDIDOS -->
+<div id="ordersSection" style="display:none">
+  <h1>🧾 Pedidos</h1>
+  <button onclick="exportExcel()"
+  style="margin-bottom:15px;padding:8px 14px;background:#16a34a;color:white;border:none;border-radius:6px">
+  📤 Exportar a Excel
+</button>
+
+  <p>📌 Aquí se mostrará el listado de pedidos.</p>
+
+  <table>
+    <thead>
+  <tr>
+    <th>Fecha</th>
+    <th>Pedido</th>
+    <th>Cliente</th>
+    <th>Celular</th>
+    <th>Total</th>
+    <th>Detalle</th>
+    <th>Eliminar</th>
+  </tr>
+</thead>
+
+
+    <tbody id="ordersTable"></tbody>
+  </table>
+</div>  
+</div> <!-- CIERRE DE adminPanel -->
+  
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  doc,
+  updateDoc,
+  addDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+// 🔥 Config Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyB82EorZSZo5exTSGETod4HS8YuIg1WaNk",
+  authDomain: "myke-store.firebaseapp.com",
+  projectId: "myke-store",
+  storageBucket: "myke-store.firebasestorage.app",
+  messagingSenderId: "167108566166",
+  appId: "1:167108566166:web:a71a66a6945c186a00f6b7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const loginForm = document.getElementById("loginForm");
+const adminPanel = document.getElementById("adminPanel");
+const productsTable = document.getElementById("productsTable");
+const ordersTable = document.getElementById("ordersTable");
+const table = document.getElementById("ordersTable");
+let ordersCache = [];
+
+// 🔄 Escucha pedidos en tiempo real
+onSnapshot(collection(db,"orders"), snapshot=>{
+  table.innerHTML = "";
+  ordersCache = [];
+
+  snapshot.forEach(docSnap=>{
+    const o = docSnap.data();
+    ordersCache.push({
+  id: docSnap.id,
+  ...o
+});
+
+
+    const date = o.createdAt?.toDate
+      ? o.createdAt.toDate().toLocaleString()
+      : "-";
+
+    const tr = document.createElement("tr");
+
+   tr.innerHTML = `
+  <td>${date}</td>
+  <td>${o.orderNumber || docSnap.id}</td>
+  <td>${o.customerName || "-"}</td>
+  <td>${o.customerPhone || "-"}</td>
+  <td>S/ ${o.total || 0}</td>
+  <td>
+    <button onclick="showDetailById('${docSnap.id}')">
+      Ver
+    </button>
+  </td>
+  <td>
+    <button style="background:#dc2626;color:white"
+      onclick="deleteOrder('${docSnap.id}')">
+      🗑
+    </button>
+  </td>
+`;
+
+    table.appendChild(tr);
+  });
+});
+
+// 👁️ Ver detalle
+window.showDetail = (order)=>{
+  let text = `
+Pedido: ${order.orderNumber || "-"}
+Cliente: ${order.customerName || "-"}
+Celular: ${order.customerPhone || "-"}
+Total: S/ ${order.total || 0}
+
+Productos:
+`;
+
+  if(order.items){
+    order.items.forEach(i=>{
+      const qty = Number(i.quantity ?? i.qty ?? i.cantidad ?? 1);
+      text += `• ${i.name} x${qty} - S/ ${i.price}\n`;
+    });
+  }  
+  alert(text);
+};
+
+// 🔍 Ver detalle por ID (SEGURO)
+window.showDetailById = (id)=>{
+  const order = ordersCache.find(o => o.orderNumber === id || o.id === id);
+  if(!order){
+    alert("Pedido no encontrado");
+    return;
+  }
+  showDetail(order);
+};
+
+
+window.deleteOrder = async (id)=>{
+  if(!confirm("⚠️ ¿Eliminar este pedido definitivamente?")) return;
+
+  await deleteDoc(doc(db,"orders",id));
+
+  alert("🗑 Pedido eliminado correctamente");
+};
+  
+
+window.exportExcel = ()=>{
+  if(ordersCache.length === 0){
+    alert("No hay pedidos");
+    return;
+  }
+
+  /* 🗂 ORDENAR POR FECHA (más reciente primero) */
+  const sortedOrders = [...ordersCache].sort((a,b)=>{
+    const da = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+    const db = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+    return db - da;
+  });
+
+  /* 📄 HOJA 1: RESUMEN PEDIDOS */
+  const summaryRows = sortedOrders.map(o => ({
+    Pedido: o.orderNumber || o.id,
+    Cliente: o.customerName || "",
+    Teléfono: o.customerPhone || "",
+    Total: o.total || 0,
+    Estado: o.status || "",
+    Fecha: o.createdAt?.toDate
+      ? o.createdAt.toDate().toLocaleString()
+      : ""
+  }));
+
+  const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+
+
+  /* 🎨 Ancho columnas */
+  wsSummary["!cols"] = [
+    { wch: 16 },
+    { wch: 26 },
+    { wch: 18 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 22 }
+  ];
+
+  /* 🔽 Filtros automáticos */
+  wsSummary["!autofilter"] = {
+    ref: `A1:F${summaryRows.length + 1}`
+  };
+
+  /* 🎨 Encabezados */
+  Object.keys(summaryRows[0]).forEach((_, c)=>{
+    const cell = wsSummary[XLSX.utils.encode_cell({ r:0, c })];
+    if(cell){
+      cell.s = {
+        font:{ bold:true, color:{ rgb:"FFFFFF" }},
+        fill:{ fgColor:{ rgb:"1E293B" }},
+        alignment:{ horizontal:"center" }
+      };
+    }
+  });
+
+  /* 🦓 Zebra rows + moneda */
+  for(let r=1; r<=summaryRows.length; r++){
+    const isEven = r % 2 === 0;
+
+    for(let c=0; c<6; c++){
+      const cell = wsSummary[XLSX.utils.encode_cell({ r, c })];
+      if(!cell) continue;
+
+      cell.s = {
+        fill: isEven
+          ? { fgColor:{ rgb:"F1F5F9" } }
+          : undefined
+      };
+    }
+
+    // Total moneda
+    const totalCell = wsSummary[XLSX.utils.encode_cell({ r, c:3 })];
+    if(totalCell){
+      totalCell.t = "n";
+      totalCell.z = '"S/ "0.00';
+    }
+  }
+
+  /* 📄 HOJA 2: DETALLE DE PRODUCTOS + RENTABILIDAD */
+  const detailRows = [];
+
+  sortedOrders.forEach(o=>{
+    (o.items || []).forEach(item=>{
+      const price = item.price || 0;
+      const cost = item.cost || 0; // 👈 aquí va el costo
+      const qty = Number(item.quantity ?? item.qty ?? item.cantidad ?? 0);
+
+      const revenue = price * qty;
+      const expense = cost * qty;
+      const profit = revenue - expense;
+
+      detailRows.push({
+        Pedido: o.orderNumber || o.id,
+        Producto: item.name || "",
+        Cantidad: qty,
+        PrecioVenta: price,
+        Costo: cost,
+        Ingreso: revenue,
+        Utilidad: profit
+      });
+    });
+  });
+
+  const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+
+  wsDetail["!cols"] = [
+    { wch: 16 },
+    { wch: 30 },
+    { wch: 10 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 16 }
+  ];
+
+  wsDetail["!autofilter"] = {
+    ref: `A1:G${detailRows.length + 1}`
+  };
+
+  /* Encabezados detalle */
+  Object.keys(detailRows[0] || {}).forEach((_, c)=>{
+    const cell = wsDetail[XLSX.utils.encode_cell({ r:0, c })];
+    if(cell){
+      cell.s = {
+        font:{ bold:true, color:{ rgb:"FFFFFF" }},
+        fill:{ fgColor:{ rgb:"334155" }},
+        alignment:{ horizontal:"center" }
+      };
+    }
+  });
+
+  /* Formato moneda + utilidad */
+  for(let r=1; r<=detailRows.length; r++){
+    [3,4,5,6].forEach(c=>{
+      const cell = wsDetail[XLSX.utils.encode_cell({ r, c })];
+      if(cell){
+        cell.t = "n";
+        cell.z = '"S/ "0.00';
+      }
+    });
+  }
+
+  /* 📘 Workbook */
+
+  /* 📊 RENTABILIDAD POR PRODUCTO (CONSOLIDADO) */
+const productMap = {};
+
+// recorrer pedidos
+sortedOrders.forEach(o=>{
+  (o.items || []).forEach(item=>{
+    const name = item.name || "SIN NOMBRE";
+    const qty = Number(item.quantity ?? item.qty ?? item.cantidad ?? 0);
+    const price = item.price || 0;
+    const cost = item.cost || 0;
+
+    if(!productMap[name]){
+      productMap[name] = {
+        product: name,
+        qty: 0,
+        price,
+        cost,
+        stock: 0
+      };
+    }
+
+    productMap[name].qty += qty;
+  });
+});
+
+// traer stock actual desde la tabla de productos
+document.querySelectorAll("#productsTable tr").forEach(tr=>{
+  const name = tr.querySelector("td:nth-child(2)")?.innerText || "";
+  const stock = parseInt(tr.querySelector(".stockInput")?.value || 0);
+
+  if(productMap[name]){
+    productMap[name].stock = stock;
+  }
+});
+
+// construir filas
+const profitRows = Object.values(productMap).map(p=>{
+  const revenueTotal = p.qty * p.price;
+  const costTotalSales = p.qty * p.cost;
+  const stockCostTotal = p.stock * p.cost;
+
+  return {
+    Producto: p.product,
+    "Total Vendidos": p.qty,
+    "Costo Unitario": p.cost,
+    "Precio Venta Unitario": p.price,
+    "Ingreso Total Ventas": revenueTotal,
+    "Costo Total Ventas": costTotalSales,
+    "Utilidad por Unidad": p.price - p.cost,
+    "Utilidad Total Ventas": revenueTotal - costTotalSales,
+    "Stock Actual": p.stock,
+    "Costo Total Stock": stockCostTotal
+  };
+});
+
+const wsProfit = XLSX.utils.json_to_sheet(profitRows);
+
+wsProfit["!autofilter"] = {
+  ref: `A1:J${profitRows.length + 1}`
+};
+
+
+/* columnas */
+
+/* filtros */
+wsProfit["!cols"] = [
+  { wch: 32 },
+  { wch: 16 },
+  { wch: 16 },
+  { wch: 20 },
+  { wch: 18 },
+  { wch: 18 },
+  { wch: 20 },
+  { wch: 18 },
+  { wch: 16 },
+  { wch: 18 }
+];
+
+
+/* encabezados */
+Object.keys(profitRows[0] || {}).forEach((_, c)=>{
+  const cell = wsProfit[XLSX.utils.encode_cell({ r:0, c })];
+  if(cell){
+    cell.s = {
+      font:{ bold:true, color:{ rgb:"FFFFFF" }},
+      fill:{ fgColor:{ rgb:"7C2D12" }},
+      alignment:{ horizontal:"center" }
+    };
+  }
+});
+
+/* formato moneda */
+for(let r=1; r<=profitRows.length; r++){
+  [2,3,4,5,6,7,9].forEach(c=>{
+    const cell = wsProfit[XLSX.utils.encode_cell({ r, c })];
+    if(cell){
+      cell.t = "n";
+      cell.z = '"S/ "0.00';
+    }
+  });
+}
+
+const inventoryRows = [];
+
+// recorrer productos actuales
+document.querySelectorAll("#productsTable tr").forEach(tr=>{
+  const name = tr.querySelector("td:nth-child(2)")?.innerText || "";
+  const stock = parseInt(tr.querySelector(".stockInput")?.value || 0);
+  const cost = parseFloat(tr.querySelector(".costInput")?.value || 0);
+  const price = parseFloat(tr.querySelector(".priceInput")?.value || 0);
+
+  inventoryRows.push({
+    Producto: name,
+    Stock: stock,
+    "Costo Unitario": cost,
+    "Costo Total Stock": stock * cost,
+    "Precio Venta": price,
+    "Valor Potencial Venta": stock * price,
+    "Ganancia Potencial": (stock * price) - (stock * cost)
+  });
+});
+
+const wsInventory = XLSX.utils.json_to_sheet(inventoryRows);
+
+  
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Pedidos");
+  XLSX.utils.book_append_sheet(wb, wsDetail, "Detalle & Rentabilidad");
+  XLSX.utils.book_append_sheet(wb, wsProfit, "Rentabilidad por Producto");
+  XLSX.utils.book_append_sheet(wb, wsInventory, "Inventario & Capital");
+
+
+  XLSX.writeFile(wb, "pedidos-ignicar-toys.xlsx");
+};
+
+// Simple login
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
+
+function login(){
+  const u = document.getElementById("username").value;
+  const p = document.getElementById("password").value;
+  const error = document.getElementById("loginError");
+
+  if(u===ADMIN_USER && p===ADMIN_PASS){
+    loginForm.style.display="none";
+    adminPanel.style.display="block";
+
+    showSection("productsSection");
+    listenProducts();
+  }else{
+    error.innerText="Usuario o contraseña incorrectos";
+  }
+};
+
+
+// Escucha productos en tiempo real
+let categoriesSet = new Set();
+let existingCodes = new Set();
+
+// 🔀 Cambiar sección visible
+window.showSection = (id)=>{
+  document.getElementById("productsSection").style.display = "none";
+  document.getElementById("ordersSection").style.display = "none";
+
+  document.getElementById(id).style.display = "block";
+
+  if(id === "ordersSection"){
+    // fuerza render inmediato si ya hay datos
+    ordersTable.innerHTML = ordersTable.innerHTML;
+  }
+};
+
+
+  
+function listenProducts(){
+  onSnapshot(collection(db,"products"), snapshot => {
+    productsTable.innerHTML = "";
+    categoriesSet.clear();
+    existingCodes.clear();
+
+    const products = [];
+
+    // ✅ PASO 1: recorrer snapshot SOLO para datos
+    snapshot.forEach(docSnap => {
+      const p = docSnap.data();
+      if(!p.name || p.name === "init") return;
+
+      if(p.category) categoriesSet.add(p.category);
+      if (p.code) existingCodes.add(String(p.code).trim());
+
+      products.push({
+        id: docSnap.id,
+        ...p
+      });
+    });
+
+    const categoriesHTML = Array.from(categoriesSet)
+      .map(cat => `<option value="${cat}">${cat}</option>`)
+      .join("");
+
+    // ✅ PASO 2: renderizar filas ya con TODAS las categorías
+    products.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.dataset.id = p.id;
+      tr.dataset.changed = "false";
+
+
+      tr.innerHTML = `
+        <td>${p.image ? `<img class="product-img" src="${p.image}">` : ""}</td>
+
+        <td style="white-space:normal;min-width:220px">
+          ${p.name}
+        </td>
+
+        <td>
+          <input type="text" value="${p.code || p.id}" class="codeInput">
+        </td>
+
+        <td>
+          <select class="categorySelect">
+            ${categoriesHTML.replace(
+              `value="${p.category}"`,
+              `value="${p.category}" selected`
+            )}
+          </select>
+          <input type="text" placeholder="Nueva categoría" class="newCategoryInput">
+        </td>
+
+        <td><input type="number" value="${p.price || 0}" class="priceInput"></td>
+        <td><input type="number" value="${p.cost || 0}"  class="costInput"  style="background:#fef3c7"></td>
+        <td><input type="number" value="${p.discountPrice || 0}" class="discountInput"></td>
+        <td><input type="number" value="${p.stock || 0}" class="stockInput"></td>
+        <td><input type="number" class="unitsInput" placeholder="0"></td>
+        <td><input type="number" class="totalCostInput" placeholder="0"></td>
+
+
+        <td style="text-align:center">
+        <input type="checkbox" class="activeInput" ${p.active ? "checked" : ""}>
+        </td>
+
+        <td>
+          <button class="saveBtn" data-id="${p.id}">💾 Guardar</button>
+        </td>
+        <td>
+        <button class="deleteBtn" data-id="${p.id}" style="background:#dc2626;color:white">🗑 Eliminar</button>
+        </td>
+
+      `;
+
+      productsTable.appendChild(tr);
+
+tr.querySelectorAll("input, select").forEach(el => {
+  el.onchange = () => {
+    tr.dataset.changed = "true";
+    tr.style.background = "#fff7ed";
+  };
+});
+
+  const unitsInput = tr.querySelector(".unitsInput");
+  const totalCostInput = tr.querySelector(".totalCostInput");
+  const costInput = tr.querySelector(".costInput");
+
+  function autoCalcUnitCost(){
+  const units = parseFloat(unitsInput.value);
+  const total = parseFloat(totalCostInput.value);
+
+  if(units > 0 && total > 0){
+    costInput.value = (total / units).toFixed(2);
+    tr.dataset.changed = "true";
+    tr.style.background = "#fff7ed";
+  }
+}
+
+unitsInput.oninput = autoCalcUnitCost;
+totalCostInput.oninput = autoCalcUnitCost;
+
+    
+    });
+    bindEvents();
+  });
+}
+
+ async function saveAllProducts(){
+  const rows = document.querySelectorAll("tr[data-changed='true']");
+
+  if(rows.length === 0){
+    alert("ℹ️ No hay cambios para guardar");
+    return;
+  }
+
+  if(!confirm(`¿Guardar cambios en ${rows.length} productos?`)) return;
+
+  for(const tr of rows){
+    const id = tr.dataset.id;
+
+    const code = tr.querySelector(".codeInput").value;
+    let category = tr.querySelector(".categorySelect").value;
+    const newCat = tr.querySelector(".newCategoryInput").value;
+    if(newCat) category = newCat;
+
+    const price = parseFloat(tr.querySelector(".priceInput").value)||0;
+    const cost = parseFloat(tr.querySelector(".costInput").value)||0;
+    const discountPrice = parseFloat(tr.querySelector(".discountInput").value)||0;
+    const stock = parseInt(tr.querySelector(".stockInput").value)||0;
+    const active = tr.querySelector(".activeInput").checked;
+
+    const discountPercent = price > 0
+      ? Math.round(((price - discountPrice) / price) * 100)
+      : 0;
+
+    await updateDoc(doc(db,"products",id),{
+  code,
+  category,
+  price,
+  cost, // 👈
+  discountPrice,
+  stock,
+  active,
+  discountPercent
+});
+
+
+    tr.dataset.changed = "false";
+    tr.style.background = "";
+  }
+
+  alert("✅ Cambios masivos guardados correctamente");
+}
+
+
+  
+// Bind botones y inputs
+function bindEvents(){
+  document.querySelectorAll(".saveBtn").forEach(btn=>{
+    btn.onclick=async ()=>{
+      const id = btn.dataset.id;
+      const tr = btn.closest("tr");
+
+      const code = tr.querySelector(".codeInput").value;
+      let category = tr.querySelector(".categorySelect").value;
+      const newCat = tr.querySelector(".newCategoryInput").value;
+      if(newCat) category = newCat;
+
+      const price = parseFloat(tr.querySelector(".priceInput").value)||0;
+      const cost = parseFloat(tr.querySelector(".costInput").value)||0;
+      const discountPrice = parseFloat(tr.querySelector(".discountInput").value)||0;
+      const stock = parseInt(tr.querySelector(".stockInput").value)||0;
+      const active = tr.querySelector(".activeInput").checked;
+
+      // calcular descuento %
+      const discountPercent = price>0?Math.round(100*(price-discountPrice)/price):0;
+
+      await updateDoc(doc(db,"products",id),{
+  code,
+  category,
+  price,
+  cost, // 👈
+  discountPrice,
+  stock,
+  active,
+  discountPercent
+});
+
+      
+tr.style.background = "#dcfce7";
+setTimeout(()=>{
+  tr.style.background = "";
+}, 800);
+
+      alert("✅ Producto actualizado");
+    }
+  });
+
+  document.querySelectorAll(".deleteBtn").forEach(btn=>{
+  btn.onclick = async ()=>{
+    const id = btn.dataset.id;
+
+    if(!confirm("⚠️ ¿Eliminar este producto definitivamente?")) return;
+
+    await deleteDoc(doc(db,"products",id));
+
+    alert("🗑 Producto eliminado correctamente");
+  };
+});
+
+}
+
+document.getElementById("saveAllBtn").onclick = saveAllProducts;
+window.saveAllProducts = saveAllProducts;
+
+  
+
+// Crear nuevo producto
+window.createNewProduct = async () => {
+  const name = prompt("Nombre del producto:");
+  if (!name) {
+    alert("Nombre obligatorio");
+    return;
+  }
+
+  const category = prompt("Categoría del producto:") || "";
+  const price = parseFloat(prompt("Precio:")) || 0;
+  const cost = parseFloat(prompt("Costo de compra:")) || 0;
+  const discountPrice = parseFloat(prompt("Precio con descuento:")) || 0;
+  const stock = parseInt(prompt("Stock:")) || 0;
+  const image = prompt(
+    "URL de la imagen (ej: https://pedrorabc09-design.github.io/catalogo-164/imagenes/archivo.png)"
+  ) || "";
+
+  const discountPercent =
+    price > 0
+      ? Math.round(((price - discountPrice) / price) * 100)
+      : 0;
+
+  await addDoc(collection(db, "products"), {
+  name,
+  code: "ID" + Date.now(),
+  category,
+  price,
+  cost, // 👈
+  discountPrice,
+  discountPercent,
+  stock,
+  active: true,
+  image
+});
+
+
+  alert("✅ Producto creado correctamente");
+};
+  // 🔐 Activar botón de login
+document
+  .getElementById("loginBtn")
+  .addEventListener("click", login);
+
+document.addEventListener("keydown", e=>{
+  if(e.key === "Enter" && loginForm.style.display !== "none"){
+    login();
+  }
+});
+
+
+document.getElementById("excelInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data, { type: "array" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+
+  if (rows.length === 0) {
+    alert("El archivo está vacío");
+    return;
+  }
+
+  if (!confirm(`¿Importar ${rows.length} productos?`)) return;
+  const progressBox = document.getElementById("importProgress");
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+
+progressBox.style.display = "block";
+progressBar.style.width = "0%";
+progressText.innerText = `Importando 0 de ${rows.length}`;
+
+
+  let imported = 0;
+
+  for (const row of rows) {
+  if (!row.name) continue;
+
+  // 🧠 obtener código por fila
+  const code = String(row.code || "").trim();
+
+  // ⛔ evitar duplicados por código
+  if (code && existingCodes.has(code)) {
+    console.warn("Código duplicado omitido:", code);
+    continue; // ✅ ahora SÍ es válido
+  }
+
+  const price = Number(row.price) || 0;
+  const discountPrice = Number(row.discountPrice) || 0;
+
+  const discountPercent =
+    price > 0
+      ? Math.round(((price - discountPrice) / price) * 100)
+      : 0;
+
+  await addDoc(collection(db, "products"), {
+    name: row.name,
+    code: code || "ID" + Date.now() + Math.floor(Math.random() * 1000),
+    category: row.category || "",
+    price,
+    cost: Number(row.cost) || 0,
+    discountPrice,
+    discountPercent,
+    stock: Number(row.stock) || 0,
+    active: String(row.active).toLowerCase() !== "false",
+    image: row.image || ""
+  });
+
+  // 🧠 registrar código ya usado
+  if (code) existingCodes.add(code);
+
+  imported++;
+
+  const percent = Math.round((imported / rows.length) * 100);
+  progressBar.style.width = percent + "%";
+  progressText.innerText = `Importando ${imported} de ${rows.length}`;
+
+  // 🟢 deja respirar al navegador (barra fluida)
+  await new Promise(r => setTimeout(r, 10));
+}
+
+  progressBox.style.display = "none";
+  alert(`✅ ${imported} productos importados correctamente`);
+  e.target.value = "";
+});
+
+
+window.downloadProductTemplate = () => {
+  const rows = [{
+    name: "Nissan GT-R R34",
+    code: "R34-001",
+    category: "JDM",
+    price: 79.9,
+    cost: 55,
+    discountPrice: 69.9,
+    stock: 10,
+    image: "https://tusitio.com/imagen.png",
+    active: true
+  }];
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [
+    { wch: 24 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 16 },
+    { wch: 10 },
+    { wch: 40 },
+    { wch: 10 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Productos");
+
+  const today = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `mykestore-plantilla-productos-${today}.xlsx`);
+};
+
+  
+</script>
+
+</body>
+</html>

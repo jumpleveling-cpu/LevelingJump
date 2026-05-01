@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Pedidos - IGNICAR TOYS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{font-family:sans-serif;background:#f1f5f9;padding:20px}
+h1{text-align:center}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{border:1px solid #ccc;padding:8px}
+th{background:#1e293b;color:#fff}
+button{padding:6px 10px;cursor:pointer}
+.status{padding:4px 8px;border-radius:6px;color:white}
+.pendiente{background:#f59e0b}
+.pagado{background:#22c55e}
+.enviado{background:#3b82f6}
+</style>
+</head>
+
+<body>
+
+<h1>📦 Pedidos</h1>
+
+<button onclick="exportExcel()">📤 Exportar pedidos a Excel</button>
+
+<table>
+<thead>
+<tr>
+  <th>Pedido</th>
+  <th>Cliente</th>
+  <th>Fecha</th>
+  <th>Total</th>
+  <th>Estado</th>
+  <th>Detalle</th>
+</tr>
+</thead>
+<tbody id="ordersTable"></tbody>
+</table>
+
+<!-- Librería Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB82EorZSZo5exTSGETod4HS8YuIg1WaNk",
+  authDomain: "myke-store.firebaseapp.com",
+  projectId: "myke-store",
+  storageBucket: "myke-store.firebasestorage.app",
+  messagingSenderId: "167108566166",
+  appId: "1:167108566166:web:a71a66a6945c186a00f6b7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const table = document.getElementById("ordersTable");
+let ordersCache = [];
+
+// 🔄 Escucha pedidos en tiempo real
+onSnapshot(collection(db,"orders"), snapshot=>{
+  table.innerHTML = "";
+  ordersCache = [];
+
+  snapshot.forEach(docSnap=>{
+    const o = docSnap.data();
+    ordersCache.push(o);
+
+    const date = o.createdAt?.toDate
+      ? o.createdAt.toDate().toLocaleString()
+      : "-";
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${o.orderNumber || docSnap.id}</td>
+      <td>${o.customerName || "-"}</td>
+      <td>${date}</td>
+      <td>S/ ${o.total || 0}</td>
+      <td>
+        <span class="status ${o.status}">
+          ${o.status}
+        </span>
+      </td>
+      <td>
+        <button onclick='showDetail(${JSON.stringify(o.items)})'>
+          Ver
+        </button>
+      </td>
+    `;
+
+    table.appendChild(tr);
+  });
+});
+
+// 👁️ Ver detalle
+window.showDetail = (items)=>{
+  let text = "Productos:\n\n";
+  items.forEach(i=>{
+    text += `• ${i.name} x${i.quantity} - S/ ${i.price}\n`;
+  });
+  alert(text);
+};
+
+// 📤 Exportar Excel
+window.exportExcel = ()=>{
+  if(ordersCache.length===0){
+    alert("No hay pedidos");
+    return;
+  }
+
+  const rows = ordersCache.map(o=>({
+    Pedido: o.orderNumber,
+    Cliente: o.customerName,
+    Email: o.customerEmail,
+    Teléfono: o.customerPhone,
+    Total: o.total,
+    Estado: o.status,
+    Fecha: o.createdAt?.toDate
+      ? o.createdAt.toDate().toLocaleString()
+      : ""
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Pedidos");
+
+  XLSX.writeFile(wb, "pedidos-ignicar-toys.xlsx");
+};
+</script>
+
+</body>
+</html>
