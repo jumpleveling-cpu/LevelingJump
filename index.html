@@ -53,6 +53,15 @@ header{
 /* CART ICON */
 .cart-icon{position:relative;font-size:22px;cursor:pointer;transition:.3s}
 .cart-icon.bounce{animation:bounce .4s}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-3px)}
+  75%{transform:translateX(3px)}
+}
+
+.cart-icon.shake{
+  animation:shake .3s;
+}
 @keyframes bounce{
   0%{transform:scale(1)}
   50%{transform:scale(1.25)}
@@ -163,17 +172,27 @@ main{padding:24px}
   justify-content:space-between;
   position:relative;
 
-  /* visual */
   box-shadow:0 10px 28px rgba(0,0,0,.10);
-  
-  /* animación entrada */
+
   opacity:0;
-  transform:translateY(20px);
-  transition:opacity .5s ease, transform .5s ease, box-shadow .3s ease;
+  transform:scale(.85);
 }
 
-.card.show{opacity:1;transform:none}
-.card:hover{transform:translateY(-6px); box-shadow:0 18px 40px rgba(0,0,0,.14);}
+/* 👇 ANIMACIÓN TIKTOK */
+@keyframes tiktokPop{
+  0%{transform:scale(.7); opacity:0}
+  60%{transform:scale(1.08); opacity:1}
+  100%{transform:scale(1)}
+}
+
+.card.show{
+  animation:tiktokPop .35s ease;
+}
+
+.card:hover{
+  transform:scale(1.05);
+  box-shadow:0 20px 45px rgba(0,0,0,.2);
+}
 .card.disabled{opacity:.45;pointer-events:none}
 .card img{width:100%;height:140px;object-fit:contain;cursor:pointer}
 .card h3{font-size:14px;margin:8px 0;min-height:36px;cursor:pointer}
@@ -182,7 +201,22 @@ main{padding:24px}
 
 /* BADGES */
 .discount-badge{position:absolute;top:10px;left:10px;background:#dc2626;color:white;font-size:12px;padding:4px 8px;border-radius:10px}
-.last-unit{position:absolute;top:10px;right:10px;background:#f59e0b;color:white;font-size:12px;padding:4px 8px;border-radius:10px}
+@keyframes blink{
+  0%,100%{opacity:1}
+  50%{opacity:.3}
+}
+
+.last-unit{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:#f59e0b;
+  color:white;
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:10px;
+  animation:blink .8s infinite;
+}
 .out-stock{position:absolute;top:10px;right:10px;background:#6b7280;color:white;font-size:12px;padding:4px 8px;border-radius:10px}
 
 /* QTY */
@@ -192,15 +226,37 @@ main{padding:24px}
 
 /* BUTTONS */
 .add-btn,.buy-btn{
-  height:38px;border-radius:12px;
-  border:none;cursor:pointer;
-  transition:.2s;width:100%;margin-top:6px
+  height:38px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  transition:.2s;
+  width:100%;
+  margin-top:6px;
+  position:relative;
+  overflow:hidden;
 }
-.add-btn{background:#0ea5e9;color:white}
-.buy-btn{background:#25d366;color:white;display:flex;align-items:center;justify-content:center;gap:6px}
-.add-btn:hover,.buy-btn:hover{transform:translateY(-2px)}
-.add-btn:active,.buy-btn:active{transform:scale(.92)}
-.buy-btn img{width:16px}
+
+/* efecto onda */
+.add-btn::after,
+.buy-btn::after{
+  content:"";
+  position:absolute;
+  width:0;
+  height:0;
+  background:rgba(255,255,255,.5);
+  border-radius:50%;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  transition:.4s;
+}
+
+.add-btn:active::after,
+.buy-btn:active::after{
+  width:200%;
+  height:200%;
+}
 
 /* DETAIL */
 #detail{display:none}
@@ -297,11 +353,22 @@ main{padding:24px}
 #cart-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5)}
 #cart-overlay.active{display:block}
 #cart{
-  position:fixed;right:-420px;top:0;width:420px;height:100%;
-  background:white;padding:20px;transition:.3s;z-index:50
-}
-#cart.active{right:0}
+  position:fixed;
+  right:0;
+  top:0;
+  width:420px;
+  height:100%;
+  background:white;
+  padding:20px;
 
+  transform:translateX(100%);
+  transition:transform .35s cubic-bezier(.68,-0.55,.27,1.55);
+  z-index:50;
+}
+
+#cart.active{
+  transform:translateX(0);
+}
 /* CATEGORIES OVERLAY */
 #categories-overlay{
   display:none;
@@ -945,7 +1012,7 @@ function renderSection(title, products){
         <span class="q-span">${p._qty}</span>
         <button onclick="changeQty('${p.name}',1)">+</button>
       </div>
-      <button class="add-btn" onclick="addToCart('${p.name}')">Añadir al carrito</button>
+      <button class="add-btn" onclick="addToCart('${p.name}', this)">Añadir al carrito</button>
       <button class="buy-btn" onclick="buyNow('${p.name}')"><img src="imagenes/whatsapp-logo.png" style="width:16px;"> Comprar ahora</button>
     `;
     track.appendChild(c);
@@ -1044,7 +1111,7 @@ window.addEventListener("resize", () => {
         <span class="q-span">${p._qty}</span>
         <button onclick="changeQty('${p.name}',1)">+</button>
       </div>
-      <button class="add-btn" onclick="addToCart('${p.name}')">Añadir al carrito</button>
+      <button class="add-btn" onclick="addToCart('${p.name}', this)">Añadir al carrito</button>
       <button class="buy-btn" onclick="buyNow('${p.name}')">
         <img src="imagenes/whatsapp-logo.png" style="width:16px;">
         Comprar ahora
@@ -1198,7 +1265,7 @@ imgs.forEach(src => {
       <span class="q-span">${p._qty}</span>
       <button onclick="changeQty('${p.name}',1)">+</button>
     </div>
-    <button class="add-btn" onclick="addToCart('${p.name}')">Añadir al carrito</button>
+    <button class="add-btn" onclick="addToCart('${p.name}', this)">Añadir al carrito</button>
     <!-- Icono WhatsApp más pequeño -->
     <button class="buy-btn" onclick="buyNow('${p.name}')"><img src="imagenes/whatsapp-logo.png" style="width:16px;"> Comprar ahora</button>
   </div>
@@ -1302,7 +1369,7 @@ function changeQty(name,d){
 // Carrito
 let reserving = false;
 
-async function addToCart(name){
+async function addToCart(name, btn){
   if(reserving) return;
   reserving = true;
 
@@ -1311,6 +1378,10 @@ async function addToCart(name){
     reserving = false;
     return;
   }
+
+  const cartIcon = document.querySelector(".cart-icon");
+cartIcon.classList.add("shake");
+setTimeout(()=>cartIcon.classList.remove("shake"),300);
 
   const ok = await reserveStock(p.id, p._qty);
 
@@ -1336,6 +1407,62 @@ async function addToCart(name){
   CART[name].time = Date.now();
 
   saveCart();
+// 🔥 animación aquí
+const card = btn?.closest(".card") || document.querySelector(".detail-box");
+const img = card?.querySelector("img");
+
+if(img){
+  const clone = img.cloneNode(true);
+  const rect = img.getBoundingClientRect();
+
+  clone.style.position = "fixed";
+  clone.style.top = rect.top + "px";
+  clone.style.left = rect.left + "px";
+  clone.style.width = rect.width + "px";
+  clone.style.zIndex = 9999;
+  clone.style.transition = "all .6s cubic-bezier(.68,-0.55,.27,1.55)";
+
+  document.body.appendChild(clone);
+
+  setTimeout(()=>{
+    clone.style.top = "20px";
+    clone.style.left = "calc(100% - 60px)";
+    clone.style.transform = "scale(.2)";
+    clone.style.opacity = "0";
+  },10);
+
+  setTimeout(()=>clone.remove(),600);
+}
+
+renderCart();
+
+
+  
+  // 🔥 ANIMACIÓN PRODUCTO → CARRITO
+const img = document.querySelector(`img[src="${p.image}"]`);
+
+if(img){
+  const clone = img.cloneNode(true);
+  const rect = img.getBoundingClientRect();
+
+  clone.style.position = "fixed";
+  clone.style.top = rect.top + "px";
+  clone.style.left = rect.left + "px";
+  clone.style.width = rect.width + "px";
+  clone.style.zIndex = 9999;
+  clone.style.transition = "all .6s cubic-bezier(.68,-0.55,.27,1.55)";
+
+  document.body.appendChild(clone);
+
+  setTimeout(()=>{
+    clone.style.top = "20px";
+    clone.style.left = "calc(100% - 60px)";
+    clone.style.transform = "scale(.2)";
+    clone.style.opacity = "0";
+  },10);
+
+  setTimeout(()=>clone.remove(),600);
+}
   reserving = false;
 }
 
