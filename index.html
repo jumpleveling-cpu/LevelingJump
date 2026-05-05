@@ -176,7 +176,7 @@
     box-shadow:0 10px 28px rgba(0,0,0,.10);
     opacity:1;
     transform:scale(1);
-    min-height:340px; /* 👈 CLAVE */
+    min-height:400px; /* 👈 CLAVE */
   }
   
   /* 👇 ANIMACIÓN TIKTOK */
@@ -240,6 +240,25 @@
   .qty{display:flex;justify-content:center;gap:8px;margin:6px 0}
   .qty button{width:28px;height:28px;border:none;border-radius:6px;background:#334155;color:white;cursor:pointer;transition:.2s}
   .qty button:active{transform:scale(.92)}
+
+  .cart-item .qty{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:4px;
+}
+
+.cart-item .qty button{
+  width:26px;
+  height:26px;
+  font-size:14px;
+}
+
+.cart-item .qty span{
+  min-width:20px;
+  text-align:center;
+  font-weight:600;
+}
   
   /* BUTTONS */
   .add-btn,.buy-btn{
@@ -1071,21 +1090,24 @@
   
     // Función para mostrar/ocultar flechas
     function updateArrows() {
-      if(track.scrollWidth > track.clientWidth) {
-        left.style.display = "inline-block";
-        right.style.display = "inline-block";
-      } else {
-        left.style.display="none";
-        right.style.display="none";
-      }
-    }
+  const hasOverflow = track.scrollWidth > track.clientWidth;
+
+  left.style.display = "inline-block";
+  right.style.display = "inline-block";
+
+  left.disabled = !hasOverflow;
+  right.disabled = !hasOverflow;
+
+  left.style.opacity = hasOverflow ? "1" : "0.3";
+  right.style.opacity = hasOverflow ? "1" : "0.3";
+}
   
     // Scroll al hacer click
     left.onclick = () => track.scrollBy({ left: -220, behavior: 'smooth' });
     right.onclick = () => track.scrollBy({ left: 220, behavior: 'smooth' });
   
     // Actualizar flechas después de un pequeño delay para que el DOM calcule tamaños
-    setTimeout(updateArrows, 50);
+    setTimeout(updateArrows, 150);
   
     // También actualizamos al hacer scroll y redimensionar
     track.addEventListener("scroll", updateArrows);
@@ -1545,7 +1567,7 @@ if(minTime !== Infinity){
     <div class="cart-item">
       <img src="${p.image}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;">
       
-      <div style="flex:1;padding:0 8px;">
+      <div style="flex:1;padding:0 8px; min-width:0;">
         <div>${p.name}</div>
         <small>S/ ${(p.discount?p.finalPrice:p.price)} x ${p.qty}</small>
   
@@ -1563,7 +1585,11 @@ if(minTime !== Infinity){
   `;
     });
   
-    const shipping = total > 100 ? 0 : 10;
+    // 🔒 ENVÍO (desactivado por ahora)
+// const shipping = total > 100 ? 0 : 10;
+
+// 👉 Envío deshabilitado temporalmente
+    const shipping = 0;
   
   cartTotal.innerHTML = `
     Subtotal: S/ ${total}<br>
