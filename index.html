@@ -250,13 +250,31 @@ main{padding:24px}
   width:100%;
   margin-top:6px;
   position:relative;
-  overflow:hidden;
+  overflow:visible;
 
-  z-index: 5; /* 👈 CLAVE */
+  z-index: 5;
+
+  display:flex;              /* 👈 CLAVE */
+  align-items:center;        /* 👈 CLAVE */
+  justify-content:center;    /* 👈 CLAVE */
+  gap:6px;                   /* 👈 CLAVE */
 }
+  
 .buy-btn{
-  background:#25d366;
-  color:white;
+  background:#ff2d55; /* estilo TikTok */
+  color:#fff;
+  font-weight:600;
+  transition:transform .15s ease;
+}
+
+.buy-btn img{
+  width:16px;
+  height:16px;
+  object-fit:contain;
+}
+
+.buy-btn:active{
+  transform:scale(.92);
 }
 
 /* efecto onda */
@@ -266,12 +284,20 @@ main{padding:24px}
   position:absolute;
   width:0;
   height:0;
-  background:rgba(255,255,255,.5);
+  background:rgba(255,255,255,.4);
   border-radius:50%;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:0; /* 👈 CLAVE */
   transition:.4s;
+}
+
+.add-btn span,
+.buy-btn span{
+  position:relative;
+  z-index:1;
 }
 
 .add-btn:active::after,
@@ -1137,7 +1163,7 @@ window.addEventListener("resize", () => {
       <button class="add-btn" onclick="addToCart('${p.name}', this)">Añadir al carrito</button>
       <button class="buy-btn" onclick="buyNow('${p.name}')">
         <img src="imagenes/whatsapp-logo.png" style="width:16px;">
-        Comprar ahora
+        <span>Comprar ahora</span>
       </button>
     `;
     grid.appendChild(c);
