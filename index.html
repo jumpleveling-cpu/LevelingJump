@@ -189,6 +189,11 @@ main{padding:24px}
   animation:tiktokPop .35s ease;
 }
 
+.card{
+  opacity: 1 !important;
+  transform: scale(1) !important;
+}
+
 .card:hover{
   transform:scale(1.05);
   box-shadow:0 20px 45px rgba(0,0,0,.2);
@@ -1436,34 +1441,7 @@ if(imgFly){
 
 renderCart();
 
-
-  
-  // 🔥 ANIMACIÓN PRODUCTO → CARRITO
-const img = document.querySelector(`img[src="${p.image}"]`);
-
-if(imgFly){
-  const clone = imgFly.cloneNode(true);
-  const rect = imgFly.getBoundingClientRect();
-
-  clone.style.position = "fixed";
-  clone.style.top = rect.top + "px";
-  clone.style.left = rect.left + "px";
-  clone.style.width = rect.width + "px";
-  clone.style.zIndex = 9999;
-  clone.style.transition = "all .6s cubic-bezier(.68,-0.55,.27,1.55)";
-
-  document.body.appendChild(clone);
-
-  setTimeout(()=>{
-    clone.style.top = "20px";
-    clone.style.left = "calc(100% - 60px)";
-    clone.style.transform = "scale(.2)";
-    clone.style.opacity = "0";
-  },10);
-
-  setTimeout(()=>clone.remove(),600);
-}
-  reserving = false;
+reserving = false;
 }
 
 
