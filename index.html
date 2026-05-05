@@ -246,12 +246,20 @@
   align-items:center;
   gap:6px;
   margin-top:4px;
+  flex-shrink:0; /* 👈 evita que desaparezca */
 }
 
 .cart-item .qty button{
-  width:26px;
-  height:26px;
-  font-size:14px;
+  width:28px;
+  height:28px;
+  font-size:16px;
+  background:#1e293b;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
 .cart-item .qty span{
@@ -451,7 +459,32 @@
     display:block;
   }
   
-  .cart-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px}
+.cart-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+  font-size:14px;
+}
+
+/* 👇 AÑADE ESTO AQUÍ */
+.cart-item > div{
+  flex:1;
+  min-width:0;
+}
+
+.cart-item > div{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+}
+
+.cart-item > div > div:first-child{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+    
   .cart-item small{color:#dc2626}
   .cart-item button{border:none;background:none;cursor:pointer}
   
@@ -1094,8 +1127,8 @@
     function updateArrows() {
   const hasOverflow = track.scrollWidth > track.clientWidth;
 
-  left.style.display = "inline-block";
-  right.style.display = "inline-block";
+  left.style.display = hasOverflow ? "inline-block" : "none";
+  right.style.display = hasOverflow ? "inline-block" : "none";
 
   left.disabled = !hasOverflow;
   right.disabled = !hasOverflow;
