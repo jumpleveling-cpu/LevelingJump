@@ -171,11 +171,11 @@ main{padding:24px}
   flex-direction:column;
   justify-content:space-between;
   position:relative;
-
+  gap:8px;
   box-shadow:0 10px 28px rgba(0,0,0,.10);
-
   opacity:1;
   transform:scale(1);
+  min-height:340px; /* 👈 CLAVE */
 }
 
 /* 👇 ANIMACIÓN TIKTOK */
@@ -253,6 +253,10 @@ main{padding:24px}
   overflow:hidden;
 
   z-index: 5; /* 👈 CLAVE */
+}
+.buy-btn{
+  background:#25d366;
+  color:white;
 }
 
 /* efecto onda */
@@ -1119,7 +1123,9 @@ window.addEventListener("resize", () => {
       ${a === 1 ? `<div class="last-unit">Última unidad</div>` : a <= 0 ? `<div class="out-stock">Agotado</div>` : ""}
       <img src="${p.image}" onclick="showDetailById('${p.id}')">
       <h3 onclick="showDetailById('${p.id}')">
-      <div>
+  ${p.name}
+</h3>
+<div>
         ${p.discount ? `<span class="old-price">S/ ${p.price}</span>` : ""}
         <span class="price">S/ ${p.discount?p.finalPrice:p.price}</span>
       </div>
