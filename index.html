@@ -428,7 +428,13 @@
   }
   
   /* CART */
-  #cart-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5)}
+  #cart-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  z-index:49; /* 👈 CLAVE */
+}
   #cart-overlay.active{display:block}
   #cart{
     position:fixed;
@@ -443,7 +449,18 @@
     transition:transform .35s cubic-bezier(.68,-0.55,.27,1.55);
     z-index:50;
   }
-  
+
+#closeCartBtn{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:none;
+  border:none;
+  font-size:24px;
+  cursor:pointer;
+  color:#0f172a;
+}
+    
   #cart.active{
     transform:translateX(0);
   }
@@ -694,6 +711,7 @@
   
   <div id="cart-overlay" onclick="toggleCart(false)"></div>
   <div id="cart">
+    <button id="closeCartBtn">✕</button>
     <!-- MODAL CHECKOUT -->
   <div id="checkoutModal" style="
     display:none;
@@ -1889,6 +1907,20 @@ window.addEventListener("resize", () => {
   window.showDetailById = showDetailById;
   window.updateCartQty = updateCartQty;
   window.addEventListener("DOMContentLoaded", () => {
+
+const closeBtn = document.getElementById("closeCartBtn");
+
+if (closeBtn) {
+  closeBtn.addEventListener("click", () => toggleCart(false));
+}
+    
+  const overlay = document.getElementById("cart-overlay");
+
+if (overlay) {
+  overlay.addEventListener("click", () => toggleCart(false));
+  overlay.addEventListener("touchstart", () => toggleCart(false));
+}
+  
   const modal = document.getElementById("checkoutModal");
 
   if(modal){
