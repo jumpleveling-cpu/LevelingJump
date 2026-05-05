@@ -606,8 +606,7 @@
     width: 28px;
     height: 28px;
     }
-  
-  
+ } 
     
   .pagination{
     display:flex;
@@ -923,6 +922,9 @@
   listenProductsRealtime();
   startCartTimer();
   setInterval(checkExpiredCart, 10000);
+  setInterval(() => {
+  renderCart();
+}, 1000);
 })();
   
   
@@ -1597,7 +1599,10 @@ if(minTime !== Infinity){
     <strong>Total: S/ ${total + shipping}</strong>
   `;
     cartCount.innerText = count;
-    cartTimer.innerText = count ? `(${minLeft}m ${secLeft}s)` : "";
+    const format = (n) => n.toString().padStart(2, "0");
+cartTimer.innerText = count 
+  ? `(${format(minLeft)}:${format(secLeft)})` 
+  : "";
   }
   
 function removeFromCart(id){
