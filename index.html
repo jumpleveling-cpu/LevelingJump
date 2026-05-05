@@ -1409,11 +1409,11 @@ setTimeout(()=>cartIcon.classList.remove("shake"),300);
   saveCart();
 // 🔥 animación aquí
 const card = btn?.closest(".card") || document.querySelector(".detail-box");
-const img = card?.querySelector("img");
+const imgFly = card?.querySelector("img");
 
-if(img){
-  const clone = img.cloneNode(true);
-  const rect = img.getBoundingClientRect();
+if(imgFly){
+  const clone = imgFly.cloneNode(true);
+  const rect = imgFly.getBoundingClientRect();
 
   clone.style.position = "fixed";
   clone.style.top = rect.top + "px";
@@ -1441,9 +1441,9 @@ renderCart();
   // 🔥 ANIMACIÓN PRODUCTO → CARRITO
 const img = document.querySelector(`img[src="${p.image}"]`);
 
-if(img){
-  const clone = img.cloneNode(true);
-  const rect = img.getBoundingClientRect();
+if(imgFly){
+  const clone = imgFly.cloneNode(true);
+  const rect = imgFly.getBoundingClientRect();
 
   clone.style.position = "fixed";
   clone.style.top = rect.top + "px";
