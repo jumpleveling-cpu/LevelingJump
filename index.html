@@ -1643,7 +1643,37 @@ cartTimer.innerText = count
   ? `(${format(minLeft)}:${format(secLeft)})` 
   : "";
   }
-  
+
+function updateCartTimer(){
+  const now = Date.now();
+
+  let count = 0;
+  let minTime = Infinity;
+
+  Object.values(CART).forEach(p=>{
+    const left = CART_TIMEOUT - (now - p.time);
+
+    if(left > 0){
+      count += p.qty;
+      minTime = Math.min(minTime, left);
+    }
+  });
+
+  if(count <= 0){
+    cartTimer.innerText = "";
+    return;
+  }
+
+  const minLeft = Math.floor(minTime / 60000);
+  const secLeft = Math.floor((minTime % 60000) / 1000);
+
+  const format = n => n.toString().padStart(2,"0");
+
+  cartTimer.innerText =
+    `(${format(minLeft)}:${format(secLeft)})`;
+}
+
+    
 function removeFromCart(id){
   const item = CART[id];
   if(item){
