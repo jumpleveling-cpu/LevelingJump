@@ -5,6 +5,84 @@
   <title>Administrador Leveling Jump</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
+
+  /* MODAL */
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+  padding:20px;
+}
+
+.modal-content{
+  background:white;
+  width:100%;
+  max-width:700px;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 20px 50px rgba(0,0,0,.25);
+  animation:modalShow .2s ease;
+}
+
+@keyframes modalShow{
+  from{
+    opacity:0;
+    transform:translateY(10px) scale(.98);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+.modal-header{
+  padding:18px 22px;
+  background:#0f172a;
+  color:white;
+}
+
+.modal-body{
+  padding:22px;
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+
+.form-grid label{
+  display:block;
+  margin-bottom:6px;
+  font-size:14px;
+  font-weight:600;
+}
+
+.modal-footer{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding:18px 22px;
+  background:#f8fafc;
+}
+
+.cancelBtn{
+  background:#e2e8f0;
+  color:#0f172a;
+}
+
+@media(max-width:768px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+    
     body{
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   padding:20px;
@@ -266,6 +344,21 @@ img.product-img{
   
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+<!-- TOAST -->
+<div id="toast" style="
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#0f172a;
+  color:white;
+  padding:14px 18px;
+  border-radius:10px;
+  display:none;
+  z-index:99999;
+  box-shadow:0 10px 25px rgba(0,0,0,.2);
+">
+</div>
+  
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import {
@@ -275,7 +368,8 @@ import {
   doc,
   updateDoc,
   addDoc,
-  deleteDoc
+  deleteDoc,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 // 🔥 Config Firebase
@@ -297,6 +391,7 @@ const productsTable = document.getElementById("productsTable");
 const ordersTable = document.getElementById("ordersTable");
 const table = document.getElementById("ordersTable");
 let ordersCache = [];
+let productsCache = [];
 
 // 🔄 Escucha pedidos en tiempo real
 onSnapshot(collection(db,"orders"), snapshot=>{
@@ -424,8 +519,10 @@ window.exportExcel = ()=>{
   };
 
   /* 🎨 Encabezados */
+if(summaryRows.length > 0){
   Object.keys(summaryRows[0]).forEach((_, c)=>{
     const cell = wsSummary[XLSX.utils.encode_cell({ r:0, c })];
+
     if(cell){
       cell.s = {
         font:{ bold:true, color:{ rgb:"FFFFFF" }},
@@ -434,6 +531,7 @@ window.exportExcel = ()=>{
       };
     }
   });
+}
 
   /* 🦓 Zebra rows + moneda */
   for(let r=1; r<=summaryRows.length; r++){
@@ -550,13 +648,12 @@ sortedOrders.forEach(o=>{
 });
 
 // traer stock actual desde la tabla de productos
-document.querySelectorAll("#productsTable tr").forEach(tr=>{
-  const name = tr.querySelector("td:nth-child(2)")?.innerText || "";
-  const stock = parseInt(tr.querySelector(".stockInput")?.value || 0);
+productsCache.forEach(p=>{
 
-  if(productMap[name]){
-    productMap[name].stock = stock;
+  if(productMap[p.name]){
+    productMap[p.name].stock = p.stock || 0;
   }
+
 });
 
 // construir filas
@@ -629,21 +726,21 @@ for(let r=1; r<=profitRows.length; r++){
 const inventoryRows = [];
 
 // recorrer productos actuales
-document.querySelectorAll("#productsTable tr").forEach(tr=>{
-  const name = tr.querySelector("td:nth-child(2)")?.innerText || "";
-  const stock = parseInt(tr.querySelector(".stockInput")?.value || 0);
-  const cost = parseFloat(tr.querySelector(".costInput")?.value || 0);
-  const price = parseFloat(tr.querySelector(".priceInput")?.value || 0);
+productsCache.forEach(p=>{
 
   inventoryRows.push({
-    Producto: name,
-    Stock: stock,
-    "Costo Unitario": cost,
-    "Costo Total Stock": stock * cost,
-    "Precio Venta": price,
-    "Valor Potencial Venta": stock * price,
-    "Ganancia Potencial": (stock * price) - (stock * cost)
+    Producto: p.name || "",
+    Stock: p.stock || 0,
+    "Costo Unitario": p.cost || 0,
+    "Costo Total Stock": (p.stock || 0) * (p.cost || 0),
+    "Precio Venta": p.price || 0,
+    "Valor Potencial Venta": (p.stock || 0) * (p.price || 0),
+    "Ganancia Potencial":
+      ((p.stock || 0) * (p.price || 0))
+      -
+      ((p.stock || 0) * (p.cost || 0))
   });
+
 });
 
 const wsInventory = XLSX.utils.json_to_sheet(inventoryRows);
@@ -662,6 +759,19 @@ const wsInventory = XLSX.utils.json_to_sheet(inventoryRows);
 // Simple login
 const ADMIN_USER = "admin";
 const ADMIN_PASS = "1234";
+
+function showToast(message){
+  const toast = document.getElementById("toast");
+
+  toast.innerText = message;
+  toast.style.display = "block";
+
+  clearTimeout(toast._timer);
+
+  toast._timer = setTimeout(()=>{
+    toast.style.display = "none";
+  },2500);
+}
 
 function login(){
   const u = document.getElementById("username").value;
@@ -706,6 +816,7 @@ function listenProducts(){
     existingCodes.clear();
 
     const products = [];
+    productsCache = [];
 
     // ✅ PASO 1: recorrer snapshot SOLO para datos
     snapshot.forEach(docSnap => {
@@ -719,6 +830,10 @@ function listenProducts(){
         id: docSnap.id,
         ...p
       });
+      productsCache.push({
+  id: docSnap.id,
+  ...p
+});
     });
 
     const categoriesHTML = Array.from(categoriesSet)
@@ -776,12 +891,6 @@ function listenProducts(){
 
       productsTable.appendChild(tr);
 
-tr.querySelectorAll("input, select").forEach(el => {
-  el.onchange = () => {
-    tr.dataset.changed = "true";
-    tr.style.background = "#fff7ed";
-  };
-});
 
   const unitsInput = tr.querySelector(".unitsInput");
   const totalCostInput = tr.querySelector(".totalCostInput");
@@ -831,9 +940,10 @@ totalCostInput.oninput = autoCalcUnitCost;
     const stock = parseInt(tr.querySelector(".stockInput").value)||0;
     const active = tr.querySelector(".activeInput").checked;
 
-    const discountPercent = price > 0
-      ? Math.round(((price - discountPrice) / price) * 100)
-      : 0;
+    const discountPercent =
+  price > 0 && discountPrice < price
+    ? Math.round(((price - discountPrice) / price) * 100)
+    : 0;
 
     await updateDoc(doc(db,"products",id),{
   code,
@@ -851,7 +961,7 @@ totalCostInput.oninput = autoCalcUnitCost;
     tr.style.background = "";
   }
 
-  alert("✅ Cambios masivos guardados correctamente");
+  showToast("✅ Cambios guardados");
 }
 
 
@@ -875,7 +985,10 @@ function bindEvents(){
       const active = tr.querySelector(".activeInput").checked;
 
       // calcular descuento %
-      const discountPercent = price>0?Math.round(100*(price-discountPrice)/price):0;
+      const discountPercent =
+  price > 0 && discountPrice < price
+    ? Math.round(((price - discountPrice) / price) * 100)
+    : 0;
 
       await updateDoc(doc(db,"products",id),{
   code,
@@ -894,7 +1007,7 @@ setTimeout(()=>{
   tr.style.background = "";
 }, 800);
 
-      alert("✅ Producto actualizado");
+      showToast("✅ Producto actualizado");
     }
   });
 
@@ -906,7 +1019,7 @@ setTimeout(()=>{
 
     await deleteDoc(doc(db,"products",id));
 
-    alert("🗑 Producto eliminado correctamente");
+    showToast("🗑 Producto eliminado");
   };
 });
 
@@ -914,56 +1027,143 @@ setTimeout(()=>{
 
 document.getElementById("saveAllBtn").onclick = saveAllProducts;
 window.saveAllProducts = saveAllProducts;
+productsTable.addEventListener("change", e => {
+  const tr = e.target.closest("tr");
+
+  if(!tr) return;
+
+  tr.dataset.changed = "true";
+  tr.style.background = "#fff7ed";
+});
 
   
+// 🪟 Abrir modal
+window.createNewProduct = () => {
 
-// Crear nuevo producto
-window.createNewProduct = async () => {
-  const name = prompt("Nombre del producto:");
-  if (!name) {
-    alert("Nombre obligatorio");
+  document.getElementById("modalName").value = "";
+  document.getElementById("modalCode").value =
+    "ID" + Date.now();
+
+  document.getElementById("modalCategory").value = "";
+  document.getElementById("modalPrice").value = "";
+  document.getElementById("modalCost").value = "";
+  document.getElementById("modalDiscount").value = "";
+  document.getElementById("modalStock").value = "";
+  document.getElementById("modalImage").value = "";
+  document.getElementById("imagePreview").src = "";
+
+  document.getElementById("productModal").style.display = "flex";
+document.body.style.overflow = "hidden";
+};
+
+// cerrar modal
+window.closeProductModal = () => {
+
+  document.getElementById("productModal").style.display = "none";
+  document.body.style.overflow = "";
+
+};
+
+// click fuera del modal
+document.getElementById("productModal")
+  .addEventListener("click", e => {
+
+    if(e.target.id === "productModal"){
+      closeProductModal();
+    }
+
+});
+
+// 👇 AQUÍ
+
+document.getElementById("modalImage")
+  .addEventListener("input", e=>{
+
+    const preview = document.getElementById("imagePreview");
+
+preview.src = e.target.value;
+
+preview.onerror = () => {
+  preview.src =
+    "https://placehold.co/600x400?text=Imagen+No+Disponible";
+};
+});
+
+// 💾 Guardar producto
+window.saveNewProduct = async () => {
+
+  const name =
+    document.getElementById("modalName").value.trim();
+
+  if(!name){
+    alert("El nombre es obligatorio");
     return;
   }
 
-  const category = prompt("Categoría del producto:") || "";
-  const price = parseFloat(prompt("Precio:")) || 0;
-  const cost = parseFloat(prompt("Costo de compra:")) || 0;
-  const discountPrice = parseFloat(prompt("Precio con descuento:")) || 0;
-  const stock = parseInt(prompt("Stock:")) || 0;
-  const image = prompt(
-    "URL de la imagen (ej: https://pedrorabc09-design.github.io/catalogo-164/imagenes/archivo.png)"
-  ) || "";
+  const code =
+    document.getElementById("modalCode").value.trim();
+
+  const category =
+    document.getElementById("modalCategory").value.trim();
+
+  const price =
+    parseFloat(document.getElementById("modalPrice").value) || 0;
+
+  const cost =
+    parseFloat(document.getElementById("modalCost").value) || 0;
+
+  const discountPrice =
+    parseFloat(document.getElementById("modalDiscount").value) || 0;
+
+  const stock =
+    parseInt(document.getElementById("modalStock").value) || 0;
+
+  const image =
+    document.getElementById("modalImage").value.trim();
 
   const discountPercent =
-    price > 0
-      ? Math.round(((price - discountPrice) / price) * 100)
-      : 0;
+  price > 0 && discountPrice < price
+    ? Math.round(((price - discountPrice) / price) * 100)
+    : 0;
 
-  await addDoc(collection(db, "products"), {
-  name,
-  code: "ID" + Date.now(),
-  category,
-  price,
-  cost, // 👈
-  discountPrice,
-  discountPercent,
-  stock,
-  active: true,
-  image
-});
+  await addDoc(collection(db,"products"),{
+    name,
+    code,
+    category,
+    price,
+    cost,
+    discountPrice,
+    discountPercent,
+    stock,
+    active:true,
+    image
+  });
 
+  closeProductModal();
 
   alert("✅ Producto creado correctamente");
 };
+
+
+  
   // 🔐 Activar botón de login
 document
   .getElementById("loginBtn")
   .addEventListener("click", login);
 
 document.addEventListener("keydown", e=>{
+
+  if(
+    e.key === "Escape" &&
+    document.getElementById("productModal").style.display === "flex"
+  ){
+    closeProductModal();
+  }
+
   if(e.key === "Enter" && loginForm.style.display !== "none"){
     login();
   }
+
 });
 
 
@@ -993,27 +1193,30 @@ progressText.innerText = `Importando 0 de ${rows.length}`;
 
   let imported = 0;
 
-  for (const row of rows) {
+  const batch = writeBatch(db);
+
+for (const row of rows) {
+
   if (!row.name) continue;
 
-  // 🧠 obtener código por fila
   const code = String(row.code || "").trim();
 
-  // ⛔ evitar duplicados por código
   if (code && existingCodes.has(code)) {
     console.warn("Código duplicado omitido:", code);
-    continue; // ✅ ahora SÍ es válido
+    continue;
   }
 
   const price = Number(row.price) || 0;
   const discountPrice = Number(row.discountPrice) || 0;
 
   const discountPercent =
-    price > 0
-      ? Math.round(((price - discountPrice) / price) * 100)
-      : 0;
+  price > 0 && discountPrice < price
+    ? Math.round(((price - discountPrice) / price) * 100)
+    : 0;
 
-  await addDoc(collection(db, "products"), {
+  const ref = doc(collection(db, "products"));
+
+  batch.set(ref,{
     name: row.name,
     code: code || "ID" + Date.now() + Math.floor(Math.random() * 1000),
     category: row.category || "",
@@ -1026,21 +1229,22 @@ progressText.innerText = `Importando 0 de ${rows.length}`;
     image: row.image || ""
   });
 
-  // 🧠 registrar código ya usado
   if (code) existingCodes.add(code);
 
   imported++;
 
   const percent = Math.round((imported / rows.length) * 100);
-  progressBar.style.width = percent + "%";
-  progressText.innerText = `Importando ${imported} de ${rows.length}`;
 
-  // 🟢 deja respirar al navegador (barra fluida)
-  await new Promise(r => setTimeout(r, 10));
+  progressBar.style.width = percent + "%";
+
+  progressText.innerText =
+    `Importando ${imported} de ${rows.length}`;
 }
 
+await batch.commit();
+
   progressBox.style.display = "none";
-  alert(`✅ ${imported} productos importados correctamente`);
+  showToast(`✅ ${imported} productos importados`);
   e.target.value = "";
 });
 
@@ -1081,5 +1285,91 @@ window.downloadProductTemplate = () => {
   
 </script>
 
+<!-- 🪟 MODAL NUEVO PRODUCTO -->
+<div id="productModal" class="modal">
+  <div class="modal-content">
+
+    <div class="modal-header">
+      <h2>➕ Nuevo Producto</h2>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="form-grid">
+
+        <div>
+          <label>Nombre</label>
+          <input type="text" id="modalName">
+        </div>
+
+        <div>
+          <label>Código</label>
+          <input type="text" id="modalCode">
+        </div>
+
+        <div>
+          <label>Categoría</label>
+          <input type="text" id="modalCategory">
+        </div>
+
+        <div>
+          <label>Precio</label>
+          <input type="number" min="0" step="0.01" id="modalPrice">
+        </div>
+
+        <div>
+          <label>Costo</label>
+          <input type="number" id="modalCost">
+        </div>
+
+        <div>
+          <label>Precio Descuento</label>
+          <input type="number" id="modalDiscount">
+        </div>
+
+        <div>
+          <label>Stock</label>
+          <input type="number" min="0" step="1" id="modalStock">
+        </div>
+
+        <div>
+  <label>URL Imagen</label>
+
+  <input type="text" id="modalImage">
+
+  <!-- 👇 PREVIEW -->
+  <img
+    id="imagePreview"
+    style="
+      width:100%;
+      height:180px;
+      object-fit:contain;
+      margin-top:10px;
+      border-radius:10px;
+      background:#f1f5f9;
+      border:1px solid #e2e8f0;
+    "
+  >
+</div>
+
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="cancelBtn" onclick="closeProductModal()">
+        Cancelar
+      </button>
+
+      <button class="saveBtn" onclick="saveNewProduct()">
+        💾 Guardar
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+  
 </body>
 </html>
