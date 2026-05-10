@@ -369,7 +369,10 @@ import {
   updateDoc,
   addDoc,
   deleteDoc,
-  writeBatch
+  writeBatch,
+  getDocs,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 // 🔥 Config Firebase
@@ -467,11 +470,81 @@ window.showDetailById = (id)=>{
 
 
 window.deleteOrder = async (id)=>{
-  if(!confirm("⚠️ ¿Eliminar este pedido definitivamente?")) return;
 
-  await deleteDoc(doc(db,"orders",id));
+  if(!confirm("⚠️ ¿Eliminar este pedido y devolver stock?")){
+    return;
+  }
 
-  alert("🗑 Pedido eliminado correctamente");
+  try{
+
+    // 1️⃣ Buscar pedido
+    const order = ordersCache.find(o => o.id === id);
+
+    if(!order){
+      alert("Pedido no encontrado");
+      return;
+    }
+
+    // 2️⃣ Recorrer productos del pedido
+    for(const item of order.items || []){
+
+      const qty = Number(
+        item.quantity ??
+        item.qty ??
+        item.cantidad ??
+        0
+      );
+
+      if(qty <= 0) continue;
+
+      // buscar producto por nombre
+      const q = query(
+        collection(db,"products"),
+        where("name","==",item.name)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if(snapshot.empty){
+        console.warn("Producto no encontrado:", item.name);
+        continue;
+      }
+
+      // actualizar stock
+      snapshot.forEach(async(productDoc)=>{
+
+        const product = productDoc.data();
+
+        const currentStock =
+          Number(product.stock || 0);
+
+        const newStock =
+          currentStock + qty;
+
+        await updateDoc(
+          doc(db,"products",productDoc.id),
+          {
+            stock:newStock
+          }
+        );
+
+      });
+
+    }
+
+    // 3️⃣ eliminar pedido
+    await deleteDoc(doc(db,"orders",id));
+
+    alert("✅ Pedido eliminado y stock restaurado");
+
+  }catch(err){
+
+    console.error(err);
+
+    alert("❌ Error al eliminar pedido");
+
+  }
+
 };
   
 
