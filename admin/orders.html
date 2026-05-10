@@ -16,6 +16,9 @@ button{padding:6px 10px;cursor:pointer}
 .pendiente{background:#f59e0b}
 .pagado{background:#22c55e}
 .enviado{background:#3b82f6}
+.cancelled{
+  background:#ef4444;
+}
 </style>
 </head>
 
@@ -34,6 +37,7 @@ button{padding:6px 10px;cursor:pointer}
   <th>Total</th>
   <th>Estado</th>
   <th>Detalle</th>
+  <th>Acciones</th>
 </tr>
 </thead>
 <tbody id="ordersTable"></tbody>
@@ -47,7 +51,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/fireba
 import {
   getFirestore,
   collection,
-  onSnapshot
+  onSnapshot,
+  doc,
+  runTransaction,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -72,7 +79,10 @@ onSnapshot(collection(db,"orders"), snapshot=>{
 
   snapshot.forEach(docSnap=>{
     const o = docSnap.data();
-    ordersCache.push(o);
+    ordersCache.push({
+  _id: docSnap.id,
+  ...o
+});
 
     const date = o.createdAt?.toDate
       ? o.createdAt.toDate().toLocaleString()
@@ -91,10 +101,20 @@ onSnapshot(collection(db,"orders"), snapshot=>{
         </span>
       </td>
       <td>
-        <button onclick='showDetail(${JSON.stringify(o.items)})'>
-          Ver
-        </button>
+      <button onclick='showDetail(${JSON.stringify(o.items)})'>
+        👁 Ver
+      </button>      
       </td>
+
+<td>
+  ${
+    o.status !== "cancelled"
+      ? `<button onclick="cancelOrder('${docSnap.id}')">
+          ❌ Cancelar
+        </button>`
+      : `Cancelado`
+  }
+</td>
     `;
 
     table.appendChild(tr);
@@ -105,10 +125,67 @@ onSnapshot(collection(db,"orders"), snapshot=>{
 window.showDetail = (items)=>{
   let text = "Productos:\n\n";
   items.forEach(i=>{
-    text += `• ${i.name} x${i.quantity} - S/ ${i.price}\n`;
+    text += `• ${i.name} x${qty} - S/ ${i.price}\n`;
   });
   alert(text);
 };
+
+window.cancelOrder = async(orderId)=>{
+
+  const ok = confirm("¿Cancelar pedido y devolver stock?");
+  if(!ok) return;
+
+  // buscar pedido
+  const order = ordersCache.find(o => o._id === orderId);
+
+  if(!order){
+    alert("Pedido no encontrado");
+    return;
+  }
+
+  // evitar doble cancelación
+  if(order.status === "cancelled"){
+    alert("El pedido ya fue cancelado");
+    return;
+  }
+
+  try{
+
+    // 🔄 devolver stock
+    for(const item of order.items){
+
+      const ref = doc(db, "products", item.id);
+
+      await runTransaction(db, async(tx)=>{
+
+        const snap = await tx.get(ref);
+
+        if(!snap.exists()) return;
+
+        const currentStock = snap.data().stock || 0;
+
+        tx.update(ref,{
+          stock: currentStock + item.qty
+        });
+
+      });
+    }
+
+    // 🟡 actualizar estado
+    await updateDoc(
+      doc(db,"orders",orderId),
+      {
+        status: "cancelled"
+      }
+    );
+
+    alert("Pedido cancelado y stock restaurado");
+
+  }catch(e){
+    console.error(e);
+    alert("Error cancelando pedido");
+  }
+}
 
 // 📤 Exportar Excel
 window.exportExcel = ()=>{
