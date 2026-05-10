@@ -306,7 +306,7 @@ img.product-img{
         <th>Costo Total Compra</th>
         <th>Activo</th>
         <th>Guardar</th>
-        <th>Eliminar</th>
+        <th>Cancelar</th>
       </tr>
     </thead>
     <tbody id="productsTable"></tbody>
@@ -321,7 +321,7 @@ img.product-img{
   📤 Exportar a Excel
 </button>
 
-  <p>📌 Aquí se mostrará el listado de pedidos.</p>
+  <p>📌 Listado de pedidos.</p>
 
   <table>
     <thead>
@@ -331,8 +331,9 @@ img.product-img{
     <th>Cliente</th>
     <th>Celular</th>
     <th>Total</th>
+    <th>Estado</th>
     <th>Detalle</th>
-    <th>Eliminar</th>
+    <th>Cancelar</th>
   </tr>
 </thead>
 
@@ -371,6 +372,7 @@ import {
   deleteDoc,
   writeBatch,
   getDocs,
+  getDoc,
   query,
   where
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -422,15 +424,40 @@ onSnapshot(collection(db,"orders"), snapshot=>{
   <td>${o.customerPhone || "-"}</td>
   <td>S/ ${o.total || 0}</td>
   <td>
+  ${
+    o.status === "cancelled"
+      ? "❌ Cancelado"
+      : "✅ Activo"
+  }
+</td>
+  <td>
     <button onclick="showDetailById('${docSnap.id}')">
       Ver
     </button>
   </td>
   <td>
-    <button style="background:#dc2626;color:white"
-      onclick="deleteOrder('${docSnap.id}')">
-      🗑
-    </button>
+    <button
+  style="
+    background:${
+      o.status === "cancelled"
+        ? "#94a3b8"
+        : "#dc2626"
+    };
+    color:white
+  "
+  ${
+    o.status === "cancelled"
+      ? "disabled"
+      : ""
+  }
+  onclick="deleteOrder('${docSnap.id}')"
+>
+  ${
+    o.status === "cancelled"
+      ? "Cancelado"
+      : "❌"
+  }
+</button>
   </td>
 `;
 
@@ -471,21 +498,28 @@ window.showDetailById = (id)=>{
 
 window.deleteOrder = async (id)=>{
 
-  if(!confirm("⚠️ ¿Eliminar este pedido y devolver stock?")){
+  if(!confirm("⚠️ ¿Cancelar pedido y devolver stock?")){
     return;
   }
 
   try{
 
-    // 1️⃣ Buscar pedido
-    const order = ordersCache.find(o => o.id === id);
+    // buscar pedido
+    const order =
+      ordersCache.find(o => o.id === id);
 
     if(!order){
       alert("Pedido no encontrado");
       return;
     }
 
-    // 2️⃣ Recorrer productos del pedido
+    // evitar cancelar 2 veces
+    if(order.status === "cancelled"){
+      alert("⚠️ Este pedido ya fue cancelado");
+      return;
+    }
+
+    // recorrer productos
     for(const item of order.items || []){
 
       const qty = Number(
@@ -497,51 +531,68 @@ window.deleteOrder = async (id)=>{
 
       if(qty <= 0) continue;
 
-      // buscar producto por nombre
-      const q = query(
-        collection(db,"products"),
-        where("name","==",item.name)
-      );
+      // ⚠️ usar productId
+      if(!item.productId){
 
-      const snapshot = await getDocs(q);
+        console.warn(
+          "Pedido sin productId:",
+          item.name
+        );
 
-      if(snapshot.empty){
-        console.warn("Producto no encontrado:", item.name);
         continue;
       }
 
-      // actualizar stock
-      snapshot.forEach(async(productDoc)=>{
+      // referencia producto
+      const productRef = doc(
+        db,
+        "products",
+        item.productId
+      );
 
-        const product = productDoc.data();
+      // obtener producto
+      const productSnap =
+        await getDoc(productRef);
 
-        const currentStock =
-          Number(product.stock || 0);
+      if(!productSnap.exists()){
 
-        const newStock =
-          currentStock + qty;
-
-        await updateDoc(
-          doc(db,"products",productDoc.id),
-          {
-            stock:newStock
-          }
+        console.warn(
+          "Producto no existe:",
+          item.productId
         );
 
+        continue;
+      }
+
+      const product = productSnap.data();
+
+      const currentStock =
+        Number(product.stock || 0);
+
+      // devolver stock
+      await updateDoc(productRef,{
+        stock: currentStock + qty
       });
 
     }
 
-    // 3️⃣ eliminar pedido
-    await deleteDoc(doc(db,"orders",id));
+    // cancelar pedido
+    await updateDoc(
+      doc(db,"orders",id),
+      {
+        status:"cancelled",
+        cancelledAt:new Date()
+      }
+    );
 
-    alert("✅ Pedido eliminado y stock restaurado");
+    alert(
+      "✅ Pedido cancelado y stock restaurado"
+    );
 
   }catch(err){
 
     console.error(err);
 
-    alert("❌ Error al eliminar pedido");
+    alert("❌ Error al cancelar pedido");
 
   }
 
