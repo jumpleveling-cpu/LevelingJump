@@ -711,7 +711,7 @@
   
   <div id="cart-overlay" onclick="toggleCart(false)"></div>
   <div id="cart">
-    <button id="closeCartBtn">✕</button>
+    <button type="button" id="closeCartBtn">✕</button>
     <!-- MODAL CHECKOUT -->
   <div id="checkoutModal" style="
     display:none;
@@ -893,21 +893,6 @@
     }
   }
   
-  async function validateCartStock(){
-    for(const item of Object.values(CART)){
-      const ref = doc(db, "products", item.id);
-      const snap = await getDoc(ref);
-  
-      if(!snap.exists()) return false;
-  
-      const stock = snap.data().stock ?? 0;
-  
-      if(stock < item.qty){
-      return false;
-      }
-    }
-    return true;
-  }
   
   async function confirmStock(){
     for(const item of Object.values(CART)){
@@ -973,9 +958,7 @@
   listenProductsRealtime();
   startCartTimer();
   setInterval(checkExpiredCart, 10000);
-  setInterval(() => {
-  renderCart();
-}, 1000);
+  setInterval(updateCartTimer,1000);
 })();
   
   
@@ -1566,7 +1549,12 @@ async function buyNow(id){
   if(buying) return;
   buying = true;
 
-  await addToCart(id, null);
+  const exists = CART[id];
+
+  if(!exists){
+    await addToCart(id, null);
+  }
+
   toggleCart(true);
 
   buying = false;
@@ -1710,21 +1698,6 @@ async function updateCartQty(id, delta){
     return;
   }
   
-  
-  
-    const ok = await validateCartStock();
-    if(!ok){
-    alert("⚠️ Algunos productos ya no tienen stock");
-  
-    checkoutInProgress = false;
-  
-    if (btn) {
-      btn.disabled = false;
-      btn.innerText = "Finalizar por WhatsApp";
-    }
-  
-    return;
-  }
   
     // 🔒 confirmar stock (NO se devuelve)
     await confirmStock();
