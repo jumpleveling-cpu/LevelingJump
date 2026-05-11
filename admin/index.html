@@ -423,17 +423,21 @@ onSnapshot(collection(db,"orders"), snapshot=>{
   <td>${o.customerName || "-"}</td>
   <td>${o.customerPhone || "-"}</td>
   <td>S/ ${o.total || 0}</td>
-  <td>
-  <select onchange="updateOrderStatus('${docSnap.id}', this.value)" style="
-    padding:6px;
-    border-radius:6px;
-  ">
-    <option value="pending" ${o.status === "pending" ? "selected" : ""}>🟡 Pendiente</option>
-    <option value="processing" ${o.status === "processing" ? "selected" : ""}>🔵 En proceso</option>
-    <option value="shipped" ${o.status === "shipped" ? "selected" : ""}>🚚 Enviado</option>
-    <option value="delivered" ${o.status === "delivered" ? "selected" : ""}>🟢 Entregado</option>
-    <option value="cancelled" ${o.status === "cancelled" ? "selected" : ""}>❌ Cancelado</option>
-  </select>
+<td>
+  ${
+  o.status === "cancelled"
+    ? `<button onclick="reactivateOrder('${docSnap.id}')" 
+        style="background:#22c55e;color:white">
+        ♻️ Reactivar
+       </button>`
+    : `<select onchange="updateOrderStatus('${docSnap.id}', this.value)" style="padding:6px;border-radius:6px;">
+          <option value="pending" ${o.status === "pending" ? "selected" : ""}>🟡 Pendiente</option>
+          <option value="processing" ${o.status === "processing" ? "selected" : ""}>🔵 En proceso</option>
+          <option value="shipped" ${o.status === "shipped" ? "selected" : ""}>🚚 Enviado</option>
+          <option value="delivered" ${o.status === "delivered" ? "selected" : ""}>🟢 Entregado</option>
+          <option value="cancelled" ${o.status === "cancelled" ? "selected" : ""}>❌ Cancelado</option>
+        </select>`
+  }
 </td>
   <td>
     <button onclick="showDetailById('${docSnap.id}')">
@@ -555,6 +559,14 @@ window.deleteOrder = async (id)=>{
     const order =
       ordersCache.find(o => o.id === id);
 
+    const freshOrderSnap = await getDoc(doc(db,"orders",id));
+const freshOrder = freshOrderSnap.data();
+
+if(freshOrder.stockAdjusted === true){
+  alert("⚠️ Este pedido ya tuvo ajuste de stock");
+  return;
+}
+    
     if(!order){
       alert("Pedido no encontrado");
       return;
@@ -614,23 +626,14 @@ if(item.productId){
 }
 
       // obtener producto
-      const productSnap =
-        await getDoc(productRef);
+      const fresh = await getDoc(productRef);
 
-      if(!productSnap.exists()){
+if(!fresh.exists()){
+  console.warn("Producto no existe:", item.productId);
+  continue;
+}
 
-        console.warn(
-          "Producto no existe:",
-          item.productId
-        );
-
-        continue;
-      }
-
-      const product = productSnap.data();
-
-      const currentStock =
-        Number(product.stock || 0);
+const currentStock = Number(fresh.data().stock || 0);
 
       // devolver stock
       await updateDoc(productRef,{
@@ -641,12 +644,13 @@ if(item.productId){
 
     // cancelar pedido
     await updateDoc(
-      doc(db,"orders",id),
-      {
-        status:"cancelled",
-        cancelledAt:new Date()
-      }
-    );
+  doc(db,"orders",id),
+  {
+    status:"cancelled",
+    cancelledAt:new Date(),
+    stockAdjusted: true
+  }
+);
 
     alert(
       "✅ Pedido cancelado y stock restaurado"
@@ -662,17 +666,102 @@ if(item.productId){
 
 };
 
-window.updateOrderStatus = async (id, status) => {
-  try {
-    await updateDoc(doc(db, "orders", id), {
-      status
-    });
+window.reactivateOrder = async (id)=>{
 
-    showToast("📦 Estado actualizado");
-  } catch (err) {
-    console.error(err);
-    alert("Error al actualizar estado");
+  if(!confirm("⚠️ ¿Reactivar pedido y descontar stock otra vez?")){
+    return;
   }
+
+  try{
+
+    const order = ordersCache.find(o => o.id === id);
+
+    if(!order){
+      alert("Pedido no encontrado");
+      return;
+    }
+
+    if(order.status !== "cancelled"){
+  alert("⚠️ Solo pedidos cancelados pueden reactivarse");
+  return;
+}
+
+    if(order.stockAdjusted === false){
+  alert("⚠️ Este pedido ya fue reactivado antes");
+  return;
+}
+
+    // 🔁 descontar stock nuevamente
+    for(const item of order.items || []){
+
+      const qty = Number(item.quantity ?? item.qty ?? item.cantidad ?? 0);
+
+      if(qty <= 0) continue;
+
+      let productRef = null;
+
+      // buscar producto
+      if(item.productId){
+
+        productRef = doc(db,"products",item.productId);
+
+      }else{
+
+        const q = query(
+          collection(db,"products"),
+          where("name","==",item.name)
+        );
+
+        const snap = await getDocs(q);
+
+        if(snap.empty) continue;
+
+        productRef = snap.docs[0].ref;
+      }
+
+      const fresh = await getDoc(productRef);
+
+if(!fresh.exists()) continue;
+
+const currentStock = Number(fresh.data().stock || 0);
+
+      // 🔻 descontar stock (OPUESTO a deleteOrder)
+      await updateDoc(productRef,{
+        stock: currentStock - qty
+      });
+
+    }
+
+    // actualizar pedido
+    await updateDoc(doc(db,"orders",id),{
+  status:"pending",
+  reactivatedAt:new Date(),
+  stockAdjusted: false
+});
+
+    showToast("🔄 Pedido reactivado y stock descontado");
+
+  }catch(err){
+    console.error(err);
+    alert("❌ Error al reactivar pedido");
+  }
+};
+  
+window.updateOrderStatus = async (id, status) => {
+
+  const order = ordersCache.find(o => o.id === id);
+
+  // 🚫 BLOQUEO SI ESTÁ CANCELADO
+  if(order?.status === "cancelled"){
+    alert("⚠️ Pedido cancelado. Usa Reactivar.");
+    return;
+  }
+
+  await updateDoc(doc(db, "orders", id), {
+    status
+  });
+
+  showToast("📦 Estado actualizado");
 };
 
 
