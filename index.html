@@ -926,12 +926,13 @@
     const price = p.discount ? p.finalPrice : p.price;
   
     items.push({
-      id: p.id,
-      name: p.name,
-      qty: p.qty,
-      price,
-      cost: p.cost || 0   // 👈 AQUÍ EXACTAMENTE
-    });
+  id: p.id,
+  name: p.name,
+  image: p.image || "",
+  qty: p.qty,
+  price,
+  cost: p.cost || 0
+});
   
     total += price * p.qty;
   });
