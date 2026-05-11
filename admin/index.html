@@ -531,23 +531,40 @@ window.deleteOrder = async (id)=>{
 
       if(qty <= 0) continue;
 
-      // ⚠️ usar productId
-      if(!item.productId){
+      let productRef = null;
 
-        console.warn(
-          "Pedido sin productId:",
-          item.name
-        );
+// ✅ SI EL PEDIDO TIENE productId
+if(item.productId){
 
-        continue;
-      }
+  productRef = doc(
+    db,
+    "products",
+    item.productId
+  );
 
-      // referencia producto
-      const productRef = doc(
-        db,
-        "products",
-        item.productId
-      );
+}else{
+
+  // ✅ FALLBACK:
+  // buscar producto por nombre
+  const q = query(
+    collection(db,"products"),
+    where("name","==",item.name)
+  );
+
+  const snap = await getDocs(q);
+
+  if(snap.empty){
+
+    console.warn(
+      "Producto no encontrado:",
+      item.name
+    );
+
+    continue;
+  }
+
+  productRef = snap.docs[0].ref;
+}
 
       // obtener producto
       const productSnap =
