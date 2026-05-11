@@ -1569,7 +1569,7 @@ window.downloadProductTemplate = () => {
   XLSX.utils.book_append_sheet(wb, ws, "Productos");
 
   const today = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `mykestore-plantilla-productos-${today}.xlsx`);
+  XLSX.writeFile(wb, `LevelingJump-${today}.xlsx`);
 };
 
 window.closeOrderModal = () => {
