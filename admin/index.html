@@ -465,24 +465,57 @@ onSnapshot(collection(db,"orders"), snapshot=>{
   });
 });
 
-// 👁️ Ver detalle
 window.showDetail = (order)=>{
-  let text = `
-Pedido: ${order.orderNumber || "-"}
-Cliente: ${order.customerName || "-"}
-Celular: ${order.customerPhone || "-"}
-Total: S/ ${order.total || 0}
 
-Productos:
-`;
+  const container = document.getElementById("orderModalBody");
 
-  if(order.items){
-    order.items.forEach(i=>{
-      const qty = Number(i.quantity ?? i.qty ?? i.cantidad ?? 1);
-      text += `• ${i.name} x${qty} - S/ ${i.price}\n`;
-    });
-  }  
-  alert(text);
+  let itemsHTML = "";
+
+  (order.items || []).forEach(item => {
+
+    const qty = Number(item.quantity ?? item.qty ?? 1);
+
+    itemsHTML += `
+      <div style="
+        display:flex;
+        gap:12px;
+        align-items:center;
+        padding:10px 0;
+        border-bottom:1px solid #e2e8f0;
+      ">
+
+        <img src="${item.image || 'https://placehold.co/80'}"
+          style="width:60px;height:60px;object-fit:cover;border-radius:8px"
+        >
+
+        <div style="flex:1">
+          <div style="font-weight:600">${item.name}</div>
+          <div style="font-size:13px;color:#64748b">
+            Cantidad: ${qty}
+          </div>
+          <div style="font-size:13px;color:#64748b">
+            Precio: S/ ${item.price}
+          </div>
+        </div>
+
+      </div>
+    `;
+  });
+
+  container.innerHTML = `
+    <div style="margin-bottom:15px">
+      <b>Cliente:</b> ${order.customerName || "-"} <br>
+      <b>Celular:</b> ${order.customerPhone || "-"} <br>
+      <b>Total:</b> S/ ${order.total || 0} <br>
+      <b>Estado:</b> ${order.status || "activo"} <br>
+      <b>Pedido:</b> ${order.orderNumber || order.id}
+    </div>
+
+    <h3>🛒 Productos</h3>
+    ${itemsHTML || "<p>No hay productos</p>"}
+  `;
+
+  document.getElementById("orderModal").style.display = "flex";
 };
 
 // 🔍 Ver detalle por ID (SEGURO)
@@ -1423,6 +1456,9 @@ window.downloadProductTemplate = () => {
   XLSX.writeFile(wb, `mykestore-plantilla-productos-${today}.xlsx`);
 };
 
+window.closeOrderModal = () => {
+  document.getElementById("orderModal").style.display = "none";
+};
   
 </script>
 
@@ -1510,6 +1546,26 @@ window.downloadProductTemplate = () => {
   </div>
 </div>
 
+<!-- 🧾 MODAL DETALLE PEDIDO -->
+<div id="orderModal" class="modal">
+  <div class="modal-content">
+
+    <div class="modal-header">
+      <h2>🧾 Detalle del Pedido</h2>
+    </div>
+
+    <div class="modal-body" id="orderModalBody">
+      <!-- contenido dinámico -->
+    </div>
+
+    <div class="modal-footer">
+      <button class="cancelBtn" onclick="closeOrderModal()">
+        Cerrar
+      </button>
+    </div>
+
+  </div>
+</div>
 
   
 </body>
