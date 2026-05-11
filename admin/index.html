@@ -424,11 +424,16 @@ onSnapshot(collection(db,"orders"), snapshot=>{
   <td>${o.customerPhone || "-"}</td>
   <td>S/ ${o.total || 0}</td>
   <td>
-  ${
-    o.status === "cancelled"
-      ? "❌ Cancelado"
-      : "✅ Activo"
-  }
+  <select onchange="updateOrderStatus('${docSnap.id}', this.value)" style="
+    padding:6px;
+    border-radius:6px;
+  ">
+    <option value="pending" ${o.status === "pending" ? "selected" : ""}>🟡 Pendiente</option>
+    <option value="processing" ${o.status === "processing" ? "selected" : ""}>🔵 En proceso</option>
+    <option value="shipped" ${o.status === "shipped" ? "selected" : ""}>🚚 Enviado</option>
+    <option value="delivered" ${o.status === "delivered" ? "selected" : ""}>🟢 Entregado</option>
+    <option value="cancelled" ${o.status === "cancelled" ? "selected" : ""}>❌ Cancelado</option>
+  </select>
 </td>
   <td>
     <button onclick="showDetailById('${docSnap.id}')">
@@ -465,8 +470,7 @@ onSnapshot(collection(db,"orders"), snapshot=>{
   });
 });
 
-window.showDetail = (order)=>{
-
+window.showDetail = (order) => {
   const container = document.getElementById("orderModalBody");
 
   let itemsHTML = "";
@@ -474,6 +478,13 @@ window.showDetail = (order)=>{
   (order.items || []).forEach(item => {
 
     const qty = Number(item.quantity ?? item.qty ?? 1);
+
+    const img =
+      item.image ||
+      item.img ||
+      item.productImage ||
+      item.photo ||
+      "https://placehold.co/80";
 
     itemsHTML += `
       <div style="
@@ -484,17 +495,20 @@ window.showDetail = (order)=>{
         border-bottom:1px solid #e2e8f0;
       ">
 
-        <img src="${item.image || 'https://placehold.co/80'}"
+        <img src="${img}"
+          onerror="this.src='https://placehold.co/80'"
           style="width:60px;height:60px;object-fit:cover;border-radius:8px"
         >
 
         <div style="flex:1">
           <div style="font-weight:600">${item.name}</div>
+
           <div style="font-size:13px;color:#64748b">
             Cantidad: ${qty}
           </div>
+
           <div style="font-size:13px;color:#64748b">
-            Precio: S/ ${item.price}
+            Precio: S/ ${item.price || 0}
           </div>
         </div>
 
@@ -507,7 +521,7 @@ window.showDetail = (order)=>{
       <b>Cliente:</b> ${order.customerName || "-"} <br>
       <b>Celular:</b> ${order.customerPhone || "-"} <br>
       <b>Total:</b> S/ ${order.total || 0} <br>
-      <b>Estado:</b> ${order.status || "activo"} <br>
+      <b>Estado:</b> ${order.status || "pending"} <br>
       <b>Pedido:</b> ${order.orderNumber || order.id}
     </div>
 
@@ -647,7 +661,20 @@ if(item.productId){
   }
 
 };
-  
+
+window.updateOrderStatus = async (id, status) => {
+  try {
+    await updateDoc(doc(db, "orders", id), {
+      status
+    });
+
+    showToast("📦 Estado actualizado");
+  } catch (err) {
+    console.error(err);
+    alert("Error al actualizar estado");
+  }
+};
+
 
 window.exportExcel = ()=>{
   if(ordersCache.length === 0){
