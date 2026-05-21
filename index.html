@@ -12,37 +12,39 @@
     <style>
     *{box-sizing:border-box;margin:0;padding:0;font-family:'Montserrat',sans-serif}
     body{
-      background:#e5e7eb; /* gris más marcado */
-      color:#0f172a;
-    }
+  background:#e5e7eb;
+  color:#0f172a;
+  overflow-x:hidden;
+}
     
     
     /* HEADER */
   header{
-    background:linear-gradient(90deg,#050505,#111827);
-    padding:16px 24px;
-    color:white;
-  
-    box-shadow:0 6px 18px rgba(0,0,0,.35);
-  
-    border-bottom:1px solid rgba(255,255,255,.08);
-  }
+  background:linear-gradient(90deg,#000000,#0f0f0f);
+  backdrop-filter:blur(12px);
+  padding:16px 24px;
+  color:white;
+  box-shadow:0 8px 25px rgba(0,0,0,.55);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  position:sticky;
+  top:0;
+  z-index:100;
+}
     
     .header-top{display:flex;align-items:center;gap:20px}
     .logo{
-    height:180px;
-    cursor:pointer;
-  
-    filter:
-      drop-shadow(0 0 8px rgba(168,85,247,.35))
-      drop-shadow(0 0 16px rgba(37,99,235,.18));
-  
-    transition:.3s;
-  }
+  height:130px;
+  cursor:pointer;
+  filter:
+    drop-shadow(0 0 10px rgba(255,255,255,.12))
+    drop-shadow(0 0 18px rgba(168,85,247,.45))
+    drop-shadow(0 0 30px rgba(37,99,235,.30));
+  transition:.35s;
+}
   
   .logo:hover{
-    transform:scale(1.03);
-  }
+  transform:scale(1.05) rotate(-1deg);
+}
     .search-area{flex:1;display:flex;gap:10px}
     .search-area input{
     flex:1;
@@ -82,17 +84,33 @@
     transform:scale(1.05);
   }
     .icons{display:flex;gap:14px;align-items:center}
-    
+
+    .social-icon{
+  width:52px;
+  height:52px;
+  object-fit:contain;
+
+  transition:.25s;
+
+  filter:
+    drop-shadow(0 0 8px rgba(255,255,255,.12));
+}
+
+.social-icon:hover{
+  transform:scale(1.12);
+}
+
+      
     /* CART ICON */
     .cart-icon{
-    position:relative;
-    font-size:34px;
-    cursor:pointer;
-    transition:.3s;
-  
-    display:flex;
-    align-items:center;
-  }
+  position:relative;
+  font-size:48px;
+  cursor:pointer;
+  transition:.3s;
+  display:flex;
+  align-items:center;
+  filter:drop-shadow(0 0 10px rgba(255,255,255,.12));
+}
     .cart-icon.bounce{animation:bounce .4s}
     @keyframes shake{
       0%,100%{transform:translateX(0)}
@@ -109,27 +127,21 @@
       100%{transform:scale(1)}
     }
     .cart-count{
-    position:absolute;
-    top:-8px;
-    right:-12px;
-  
-    background:#ef4444;
-    color:white;
-  
-    font-size:13px;
-    font-weight:700;
-  
-    min-width:22px;
-    height:22px;
-  
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  
-    border-radius:999px;
-  
-    box-shadow:0 0 10px rgba(239,68,68,.5);
-  }
+  position:absolute;
+  top:-10px;
+  right:-14px;
+  background:#ef4444;
+  color:white;
+  font-size:14px;
+  font-weight:700;
+  min-width:26px;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  box-shadow:0 0 12px rgba(239,68,68,.6);
+}
     
     /* CATEGORIES */
     #categories{
@@ -541,11 +553,6 @@
     font-size:14px;
   }
   
-  /* 👇 AÑADE ESTO AQUÍ */
-  .cart-item > div{
-    flex:1;
-    min-width:0;
-  }
   
   .cart-item > div{
     flex:1;
@@ -560,7 +567,11 @@
   }
       
     .cart-item small{color:#dc2626}
-    .cart-item button{border:none;background:none;cursor:pointer}
+    .cart-item button.remove-btn{
+  border:none;
+  background:none;
+  cursor:pointer;
+}
     
     /* MOBILE */
     @media(max-width:768px){
@@ -577,8 +588,8 @@
       }
     
       .logo{
-        height: 110px;
-        margin: 0 auto;
+        height:90px;
+        margin:0 auto;
       }
     
       .search-area{
@@ -634,7 +645,60 @@
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
       }
-    
+
+
+      /* HEADER MÁS COMPACTO */
+header{
+  padding:12px;
+}
+
+/* ÍCONOS */
+.social-icon{
+  width:42px;
+  height:42px;
+}
+
+.cart-icon{
+  font-size:40px;
+}
+
+/* HERO RESPONSIVE */
+.hero-slider{
+  height:220px;
+}
+
+.hero-content{
+  left:20px;
+  bottom:20px;
+}
+
+.hero-content h2{
+  font-size:28px;
+}
+
+.hero-content p{
+  font-size:14px;
+}
+
+/* CARDS */
+.card{
+  min-height:auto;
+}
+
+/* CARRITO */
+#cart{
+  width:100%;
+  overflow-y:auto;
+}
+
+/* SLIDER LIMPIO */
+.track{
+  scrollbar-width:none;
+}
+
+.track::-webkit-scrollbar{
+  display:none;
+}  
       
     }
     
@@ -735,7 +799,8 @@
       background:#0ea5e9;
       color:white;
     } 
-  
+
+      
   /* HERO BANNER */
   
   .hero-banner{
@@ -869,8 +934,8 @@
         </div>
         <div class="icons">
           <!-- Iconos sociales junto al carrito -->
-          <a href="https://wa.me/51963204461" target="_blank"><img src="imagenes/whatsapp-logo.png" style="width:38px;"></a>
-          <a href="https://www.tiktok.com/@leveling_jump?is_from_webapp=1&sender_device=pc" target="_blank"><img src="imagenes/TikTok.webp" style="width:38px;"></a>
+          <a href="https://wa.me/51963204461" target="_blank" rel="noopener noreferrer"><img src="imagenes/whatsapp-logo.png" class="social-icon"></a>
+          <a href="https://www.tiktok.com/@leveling_jump?is_from_webapp=1&sender_device=pc" target="_blank"><img src="imagenes/TikTok.webp" class="social-icon"></a>
           <div class="cart-icon" onclick="toggleCart(true)">
             🛒 <span class="cart-count" id="cartCount">0</span>
           </div>
@@ -942,8 +1007,19 @@
     
     <div id="cart-overlay" onclick="toggleCart(false)"></div>
     <div id="cart">
-      <button type="button" id="closeCartBtn">✕</button>
-      <!-- MODAL CHECKOUT -->
+      <div id="cart">
+  <button type="button" id="closeCartBtn" aria-label="Cerrar carrito">✕</button>
+      
+    </div>
+    
+      <h2>Carrito <small id="cartTimer"></small></h2>
+      <div id="cartItems"></div>
+      <strong>Total: S/ <span id="cartTotal">0</span></strong>
+      <button class="buy-btn" id="checkoutBtn" onclick="openCheckoutModal()">Finalizar por WhatsApp</button>
+    
+    </div>
+
+    <!-- MODAL CHECKOUT -->
     <div id="checkoutModal" style="
       display:none;
       position:fixed;
@@ -976,15 +1052,9 @@
           Confirmar pedido
         </button>
       </div>
-    </div>
-    
-      <h2>Carrito <small id="cartTimer"></small></h2>
-      <div id="cartItems"></div>
-      <strong>Total: S/ <span id="cartTotal">0</span></strong>
-      <button class="buy-btn" id="checkoutBtn" onclick="openCheckoutModal()">Finalizar por WhatsApp</button>
-    
-    </div>
-    
+
+
+      
     <!-- ==== Módulo único para Firebase y todo el JS ==== -->
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
@@ -1196,18 +1266,29 @@
   // HERO BANNER AUTO SLIDER
   let heroIndex = 0;
   
+  function startHeroSlider(){
+
+  clearInterval(window.heroInterval);
+
+  heroIndex = 0;
+
   window.heroInterval = setInterval(() => {
+
     const slides = document.querySelectorAll(".hero-slide");
-  
+
     if(!slides.length) return;
-  
-    slides[heroIndex].classList.remove("active");
-  
+
+    slides.forEach(s => s.classList.remove("active"));
+
     heroIndex = (heroIndex + 1) % slides.length;
-  
+
     slides[heroIndex].classList.add("active");
-  
-  }, 4000);    
+
+  }, 4000);
+
+}
+
+startHeroSlider();    
     
     // ==== FUNCIONES ====
     
@@ -1365,7 +1446,7 @@
         c.innerHTML = `
           ${p.discount ? `<div class="discount-badge">-${p.discount}%</div>` : ""}
           ${a === 1 ? `<div class="last-unit">Última unidad</div>` : a <= 0 ? `<div class="out-stock">Agotado</div>` : ""}
-          <img src="${p.image}" onclick="showDetailById('${p.id}')">
+          <img src="${p.image}" loading="lazy" onclick="showDetailById('${p.id}')">
           <h3 onclick="showDetailById('${p.id}')">
            ${p.name}
           </h3>
@@ -1408,17 +1489,6 @@
     
       // También actualizamos al hacer scroll y redimensionar
       track.addEventListener("scroll", updateArrows);
-      window.addEventListener("resize", () => {
-    document.querySelectorAll(".track").forEach(track => {
-      const section = track.closest(".slider");
-      const left = section.querySelector(".left");
-      const right = section.querySelector(".right");
-  
-      const hasOverflow = track.scrollWidth > track.clientWidth;
-  
-      left.style.display = hasOverflow ? "inline-block" : "none";
-      right.style.display = hasOverflow ? "inline-block" : "none";
-    });
   });
     
       catalog.appendChild(s);
@@ -1465,7 +1535,7 @@
         c.innerHTML = `
           ${p.discount ? `<div class="discount-badge">-${p.discount}%</div>` : ""}
           ${a === 1 ? `<div class="last-unit">Última unidad</div>` : a <= 0 ? `<div class="out-stock">Agotado</div>` : ""}
-          <img src="${p.image}" onclick="showDetailById('${p.id}')">
+          <img src="${p.image}" loading="lazy" onclick="showDetailById('${p.id}')">
           <h3 onclick="showDetailById('${p.id}')">
       ${p.name}
     </h3>
@@ -1717,13 +1787,20 @@
       });
     
       // 📱 Doble tap mobile
-      img.addEventListener("touchend", () => {
-        const now = Date.now();
-        if (now - lastTap < 300) {
-          img.classList.toggle("zoomed");
-        }
-        lastTap = now;
-      });
+      img.addEventListener("touchend", (e) => {
+
+  if(moved) return;
+
+  const now = Date.now();
+
+  if (now - lastTap < 300) {
+    e.preventDefault();
+    img.classList.toggle("zoomed");
+  }
+
+  lastTap = now;
+
+}, { passive:false });
     });
     }
     
@@ -1835,6 +1912,7 @@
     function goHome(){
   
     stopDetailSlider();
+    startHeroSlider();
   
     search.value = "";
   
@@ -1883,7 +1961,7 @@
     
         cartItems.innerHTML += `
       <div class="cart-item">
-        <img src="${p.image}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;">
+        <img src="${p.image}" loading="lazy" style="width:40px;height:40px;object-fit:contain;border-radius:6px;">
         
         <div style="flex:1;padding:0 8px; min-width:0;">
           <div>${p.name}</div>
@@ -1898,7 +1976,7 @@
     
         <strong>S/ ${(p.discount?p.finalPrice:p.price)*p.qty}</strong>
     
-        <button onclick="removeFromCart('${p.id}')">❌</button>
+        <button class="remove-btn" onclick="removeFromCart('${p.id}')">❌</button>
       </div>
     `;
       });
@@ -2158,15 +2236,35 @@
         .classList.remove("active");
     }
   
-    // 🔹 Resize global (solo una vez)
-  window.addEventListener("resize", () => {
-    document.querySelectorAll(".grid-products").forEach(grid=>{
-      grid.style.gridTemplateColumns =
-        window.innerWidth <= 768
-          ? "repeat(2, 1fr)"
-          : "repeat(auto-fill,minmax(220px,1fr))";
-    });
+   // 🔹 Resize global (solo una vez)
+window.addEventListener("resize", () => {
+
+  // GRID RESPONSIVE
+  document.querySelectorAll(".grid-products").forEach(grid=>{
+    grid.style.gridTemplateColumns =
+      window.innerWidth <= 768
+        ? "repeat(2, 1fr)"
+        : "repeat(auto-fill,minmax(220px,1fr))";
   });
+
+  // FLECHAS SLIDERS
+  document.querySelectorAll(".track").forEach(track => {
+
+    const section = track.closest(".slider");
+
+    if(!section) return;
+
+    const left = section.querySelector(".left");
+    const right = section.querySelector(".right");
+
+    const hasOverflow = track.scrollWidth > track.clientWidth;
+
+    left.style.display = hasOverflow ? "inline-block" : "none";
+    right.style.display = hasOverflow ? "inline-block" : "none";
+
+  });
+
+});
     
     // ==== EXPONER FUNCIONES PARA HTML (FIX MODULE) ====
     window.renderAll = renderAll;
