@@ -15,6 +15,7 @@
   background:#e5e7eb;
   color:#0f172a;
   overflow-x:hidden;
+  padding-top:0;
 }
     
     
@@ -506,18 +507,28 @@
   }
     #cart-overlay.active{display:block}
     #cart{
-      position:fixed;
-      right:0;
-      top:0;
-      width:420px;
-      height:100%;
-      background:white;
-      padding:20px;
-      transform:translateX(100%);
-      transition:transform .35s cubic-bezier(.68,-0.55,.27,1.55);
-      z-index:1000;
-    }
-  
+  position:fixed;
+  right:0;
+  top:0;
+  width:420px;
+  height:100dvh;
+  background:white;
+  padding:20px;
+  transform:translateX(100%);
+  transition:transform .35s ease;
+  z-index:99999;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+  #cartItems{
+  flex:1;
+  overflow-y:auto;
+  margin:16px 0;
+  padding-right:6px;
+}
+      
   #closeCartBtn{
     position:absolute;
     top:10px;
@@ -1005,17 +1016,31 @@ header{
     </main>
     
     <div id="cart-overlay" onclick="toggleCart(false)"></div>
-      <div id="cart">
-  <button type="button" id="closeCartBtn" aria-label="Cerrar carrito">✕</button>
-      
-    </div>
-    
-      <h2>Carrito <small id="cartTimer"></small></h2>
-      <div id="cartItems"></div>
-      <strong>Total: S/ <span id="cartTotal">0</span></strong>
-      <button class="buy-btn" id="checkoutBtn" onclick="openCheckoutModal()">Finalizar por WhatsApp</button>
-    
-    </div>
+
+<div id="cart">
+
+  <button type="button" id="closeCartBtn" aria-label="Cerrar carrito">
+    ✕
+  </button>
+
+  <h2>
+    Carrito <small id="cartTimer"></small>
+  </h2>
+
+  <div id="cartItems"></div>
+
+  <strong>
+    Total: <span id="cartTotal">0</span>
+  </strong>
+
+  <button
+    class="buy-btn"
+    id="checkoutBtn"
+    onclick="openCheckoutModal()">
+    Finalizar por WhatsApp
+  </button>
+
+</div>
 
     <!-- MODAL CHECKOUT -->
     <div id="checkoutModal" style="
@@ -1050,7 +1075,7 @@ header{
           Confirmar pedido
         </button>
       </div>
-
+      </div>
 
       
     <!-- ==== Módulo único para Firebase y todo el JS ==== -->
