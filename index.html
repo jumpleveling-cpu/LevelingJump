@@ -678,6 +678,124 @@
     background:#0ea5e9;
     color:white;
   } 
+
+/* HERO BANNER */
+
+.hero-banner{
+  padding:24px;
+}
+
+.hero-slider{
+  position:relative;
+  width:100%;
+  height:420px;
+  border-radius:28px;
+  overflow:hidden;
+  box-shadow:0 20px 50px rgba(0,0,0,.18);
+}
+
+.hero-slide{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  transition:opacity .7s ease;
+}
+
+.hero-slide.active{
+  opacity:1;
+  z-index:2;
+}
+
+.hero-slide img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.hero-slide::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    to right,
+    rgba(0,0,0,.65),
+    rgba(0,0,0,.2)
+  );
+}
+
+.hero-content{
+  position:absolute;
+  z-index:3;
+  left:50px;
+  bottom:50px;
+  color:white;
+}
+
+.hero-content h2{
+  font-size:52px;
+  font-weight:700;
+}
+
+.hero-content p{
+  font-size:20px;
+  margin-top:8px;
+}
+
+/* CATEGORY SHORTCUTS */
+
+.category-shortcuts{
+  display:flex;
+  gap:18px;
+  padding:0 24px 30px;
+  overflow-x:auto;
+}
+
+.shortcut-card{
+  min-width:220px;
+  height:120px;
+
+  position:relative;
+  overflow:hidden;
+
+  border-radius:22px;
+  cursor:pointer;
+
+  box-shadow:0 10px 25px rgba(0,0,0,.12);
+
+  transition:.3s;
+}
+
+.shortcut-card:hover{
+  transform:translateY(-6px) scale(1.03);
+}
+
+.shortcut-card img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.shortcut-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    to top,
+    rgba(0,0,0,.7),
+    rgba(0,0,0,.15)
+  );
+}
+
+.shortcut-card span{
+  position:absolute;
+  left:18px;
+  bottom:16px;
+  z-index:2;
+
+  color:white;
+  font-size:24px;
+  font-weight:700;
+}
     
   </style>
   </head>
@@ -704,6 +822,61 @@
   </header>
   
   <div id="categories-overlay" onclick="closeCategories()"></div>
+    <!-- HERO BANNER -->
+<section class="hero-banner">
+  <div class="hero-slider" id="heroSlider">
+
+    <div class="hero-slide active">
+      <img src="imagenes/banner1.jpg">
+      <div class="hero-content">
+        <h2>Nuevos ingresos</h2>
+        <p>Modelos exclusivos y preventas</p>
+      </div>
+    </div>
+
+    <div class="hero-slide">
+      <img src="imagenes/banner2.jpg">
+      <div class="hero-content">
+        <h2>Pokémon Collection</h2>
+        <p>Figuras y model kits</p>
+      </div>
+    </div>
+
+    <div class="hero-slide">
+      <img src="imagenes/banner3.jpg">
+      <div class="hero-content">
+        <h2>Zoids Premium</h2>
+        <p>HMM • Kotobukiya</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CATEGORY CARDS -->
+<section class="category-shortcuts">
+
+  <div class="shortcut-card" onclick="renderAll('Pokemon')">
+    <img src="imagenes/brands/Pokemon.jpg">
+    <span>Pokémon</span>
+  </div>
+
+  <div class="shortcut-card" onclick="renderAll('Zoids')">
+    <img src="imagenes/brands/Zoids.webp">
+    <span>Zoids</span>
+  </div>
+
+  <div class="shortcut-card" onclick="renderAll('Digimon')">
+    <img src="imagenes/brands/Digimon.png">
+    <span>Digimon</span>
+  </div>
+
+  <div class="shortcut-card" onclick="renderAll('Gundam')">
+    <img src="imagenes/brands/Gundam.png">
+    <span>Gundam</span>
+  </div>
+
+</section>
   <main>
     <div id="catalog"></div>
     <div id="detail"></div>
@@ -961,7 +1134,22 @@
   setInterval(checkExpiredCart, 10000);
   setInterval(updateCartTimer,1000);
 })();
-  
+
+// HERO BANNER AUTO SLIDER
+let heroIndex = 0;
+
+setInterval(() => {
+  const slides = document.querySelectorAll(".hero-slide");
+
+  if(!slides.length) return;
+
+  slides[heroIndex].classList.remove("active");
+
+  heroIndex = (heroIndex + 1) % slides.length;
+
+  slides[heroIndex].classList.add("active");
+
+}, 4000);    
   
   // ==== FUNCIONES ====
   
@@ -1042,7 +1230,7 @@
         );
       }
     }
-  
+    
     // 📦 MOSTRAR POR CATEGORÍA
     if(selectedCategory){
     currentPage = 1;
@@ -1072,7 +1260,9 @@
     }
   });
   }
-  
+
+
+    
   // Render sección
   function renderSection(title, products){
     const s = document.createElement("div");
@@ -1148,10 +1338,18 @@
   
     // También actualizamos al hacer scroll y redimensionar
     track.addEventListener("scroll", updateArrows);
-    if(!window._arrowResizeSet){
-  window.addEventListener("resize", updateArrows);
-  window._arrowResizeSet = true;
-}
+    window.addEventListener("resize", () => {
+  document.querySelectorAll(".track").forEach(track => {
+    const section = track.closest(".slider");
+    const left = section.querySelector(".left");
+    const right = section.querySelector(".right");
+
+    const hasOverflow = track.scrollWidth > track.clientWidth;
+
+    left.style.display = hasOverflow ? "inline-block" : "none";
+    right.style.display = hasOverflow ? "inline-block" : "none";
+  });
+});
   
     catalog.appendChild(s);
   }
