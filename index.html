@@ -692,6 +692,7 @@
   border-radius:28px;
   overflow:hidden;
   box-shadow:0 20px 50px rgba(0,0,0,.18);
+  background:#111827;
 }
 
 .hero-slide{
@@ -823,7 +824,7 @@
   
   <div id="categories-overlay" onclick="closeCategories()"></div>
     <!-- HERO BANNER -->
-<section class="hero-banner">
+<section class="hero-banner" id="heroBanner">
   <div class="hero-slider" id="heroSlider">
 
     <div class="hero-slide active">
@@ -854,7 +855,7 @@
 </section>
 
 <!-- CATEGORY CARDS -->
-<section class="category-shortcuts">
+<section class="category-shortcuts" id="categoryShortcuts">
 
   <div class="shortcut-card" onclick="renderAll('Pokemon')">
     <img src="imagenes/brands/Pokemon.jpg">
@@ -1138,7 +1139,7 @@
 // HERO BANNER AUTO SLIDER
 let heroIndex = 0;
 
-setInterval(() => {
+window.heroInterval = setInterval(() => {
   const slides = document.querySelectorAll(".hero-slide");
 
   if(!slides.length) return;
@@ -1214,6 +1215,18 @@ setInterval(() => {
     catalog.innerHTML = "";
     detail.style.display = "none";
     catalog.style.display = "block";
+
+    const heroBanner = document.getElementById("heroBanner");
+const categoryShortcuts = document.getElementById("categoryShortcuts");
+
+// ✅ SOLO mostrar en HOME
+if(selectedCategory === null && search.value.trim() === ""){
+  heroBanner.style.display = "block";
+  categoryShortcuts.style.display = "flex";
+}else{
+  heroBanner.style.display = "none";
+  categoryShortcuts.style.display = "none";
+}
   
     const q = search.value.toLowerCase().trim();
     const isSearching = q !== "" || selectedCategory !== null;
@@ -1524,7 +1537,9 @@ setInterval(() => {
   
   
     catalog.style.display="none";
-    detail.style.display="block";
+
+
+detail.style.display="block";
     detail.innerHTML=`
       <div class="detail-box">
     <div style="position:relative;">
@@ -1570,6 +1585,7 @@ setInterval(() => {
   `;
   
   // ▶️ INICIAR SLIDER AUTOMÁTICO
+  clearInterval(window.heroInterval);
   if (imgs.length > 1) {
     startDetailSlider();
   }
@@ -1760,11 +1776,16 @@ async function buyNow(id){
 }
     
   function goHome(){
-    stopDetailSlider(); // 👈 importante
-    checkoutInProgress = false;
-    sessionStorage.removeItem("checkoutConfirmed");
-    renderAll();
-  }
+
+  stopDetailSlider();
+
+  search.value = "";
+
+  checkoutInProgress = false;
+  sessionStorage.removeItem("checkoutConfirmed");
+
+  renderAll();
+}
   
   
   function saveCart(){
