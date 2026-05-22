@@ -1138,7 +1138,16 @@ function listenProducts(){
 
 
       tr.innerHTML = `
-        <td>${p.image ? `<img class="product-img" src="${p.image}">` : ""}</td>
+        <td>
+  ${
+    (p.images?.[0] || p.image)
+    ? `<img
+        class="product-img"
+        src="${p.images?.[0] || p.image}"
+      >`
+    : ""
+  }
+</td>
 
         <td style="white-space:normal;min-width:220px">
           ${p.name}
@@ -1339,8 +1348,8 @@ window.createNewProduct = () => {
   document.getElementById("modalCost").value = "";
   document.getElementById("modalDiscount").value = "";
   document.getElementById("modalStock").value = "";
-  document.getElementById("modalImage").value = "";
-  document.getElementById("imagePreview").src = "";
+  document.getElementById("modalImages").value = "";
+  document.getElementById("imagesPreview").innerHTML = "";
 
   document.getElementById("productModal").style.display = "flex";
 document.body.style.overflow = "hidden";
@@ -1366,8 +1375,42 @@ document.getElementById("productModal")
 
 // 👇 AQUÍ
 
-document.getElementById("modalImage")
+document.getElementById("modalImages")
   .addEventListener("input", e=>{
+
+    const container =
+      document.getElementById("imagesPreview");
+
+    container.innerHTML = "";
+
+    const urls = e.target.value
+      .split("\n")
+      .map(u => u.trim())
+      .filter(Boolean);
+
+    urls.forEach(url => {
+
+      const img = document.createElement("img");
+
+      img.src = url;
+
+      img.style.width = "90px";
+      img.style.height = "90px";
+      img.style.objectFit = "contain";
+      img.style.borderRadius = "10px";
+      img.style.background = "#f1f5f9";
+      img.style.border = "1px solid #e2e8f0";
+
+      img.onerror = ()=>{
+        img.src =
+          "https://placehold.co/100x100?text=Error";
+      };
+
+      container.appendChild(img);
+
+    });
+
+});
 
     const preview = document.getElementById("imagePreview");
 
@@ -1408,8 +1451,12 @@ window.saveNewProduct = async () => {
   const stock =
     parseInt(document.getElementById("modalStock").value) || 0;
 
-  const image =
-    document.getElementById("modalImage").value.trim();
+  const images =
+  document.getElementById("modalImages")
+    .value
+    .split("\n")
+    .map(url => url.trim())
+    .filter(Boolean);
 
   const discountPercent =
   price > 0 && discountPrice < price
@@ -1417,17 +1464,19 @@ window.saveNewProduct = async () => {
     : 0;
 
   await addDoc(collection(db,"products"),{
-    name,
-    code,
-    category,
-    price,
-    cost,
-    discountPrice,
-    discountPercent,
-    stock,
-    active:true,
-    image
-  });
+  name,
+  code,
+  category,
+  price,
+  cost,
+  discountPrice,
+  discountPercent,
+  stock,
+  active:true,
+
+  images,
+  image: images[0] || ""
+});
 
   closeProductModal();
 
@@ -1626,9 +1675,35 @@ window.closeOrderModal = () => {
         </div>
 
         <div>
-  <label>URL Imagen</label>
+  <label>URLs de Imágenes</label>
 
-  <input type="text" id="modalImage">
+  <textarea
+    id="modalImages"
+    placeholder="Una URL por línea"
+    style="
+      width:100%;
+      height:120px;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #cbd5e1;
+      resize:vertical;
+    "
+  ></textarea>
+
+  <small style="color:#64748b">
+    Pega una imagen por línea
+  </small>
+
+  <div
+    id="imagesPreview"
+    style="
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    "
+  ></div>
+</div>
 
   <!-- 👇 PREVIEW -->
   <img
