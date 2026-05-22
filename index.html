@@ -265,7 +265,73 @@
       box-shadow:0 20px 45px rgba(0,0,0,.2);
     }
     .card.disabled{opacity:.45;pointer-events:none}
-    .card img{width:100%;height:140px;object-fit:contain;cursor:pointer}
+    /* CARD SLIDER */
+.card-slider{
+  position:relative;
+  width:100%;
+  height:140px;
+  overflow:hidden;
+  border-radius:12px;
+}
+
+.card-track{
+  display:flex;
+  height:100%;
+  transition:transform .4s ease;
+}
+
+.card-slide{
+  min-width:100%;
+  height:140px;
+  object-fit:contain;
+  cursor:pointer;
+  background:white;
+}
+
+/* Flechas */
+.card-arrow{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:24px;
+  height:24px;
+  border:none;
+  border-radius:50%;
+  background:rgba(0,0,0,.55);
+  color:white;
+  cursor:pointer;
+  z-index:5;
+  font-size:14px;
+}
+
+.card-arrow.left{
+  left:4px;
+}
+
+.card-arrow.right{
+  right:4px;
+}
+
+/* Dots */
+.card-dots{
+  position:absolute;
+  bottom:6px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:4px;
+}
+
+.card-dots span{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:rgba(255,255,255,.5);
+}
+
+.card-dots span.active{
+  background:white;
+}
     .card h3{font-size:14px;margin:8px 0;min-height:36px;cursor:pointer}
     .price{font-weight:700;color:#16a34a}
     .old-price{text-decoration:line-through;color:#64748b;margin-right:6px}
@@ -1112,6 +1178,7 @@ header{
     // Slider detalle producto
     let detailIndex = 0;
     let detailTimer = null;
+    const cardIndexes = {};
     
     const BRAND_LOGOS = {
       "pokemon": "imagenes/brands/Pokemon.jpg",
@@ -1469,7 +1536,42 @@ startHeroSlider();
         c.innerHTML = `
           ${p.discount ? `<div class="discount-badge">-${p.discount}%</div>` : ""}
           ${a === 1 ? `<div class="last-unit">Última unidad</div>` : a <= 0 ? `<div class="out-stock">Agotado</div>` : ""}
-          <img src="${p.image}" loading="lazy" onclick="showDetailById('${p.id}')">
+          <div class="card-slider">
+
+  <div class="card-track" id="track-${p.id}">
+    ${(p.images || [p.image]).map(img => `
+      <img
+        src="${img}"
+        class="card-slide"
+        loading="lazy"
+        onclick="showDetailById('${p.id}')"
+      >
+    `).join("")}
+  </div>
+
+  ${
+    (p.images?.length || 0) > 1
+    ? `
+      <button class="card-arrow left"
+        onclick="event.stopPropagation();prevCardImg('${p.id}')">
+        ‹
+      </button>
+
+      <button class="card-arrow right"
+        onclick="event.stopPropagation();nextCardImg('${p.id}')">
+        ›
+      </button>
+
+      <div class="card-dots" id="dots-${p.id}">
+        ${(p.images || []).map((_,i)=>`
+          <span class="${i===0?'active':''}"></span>
+        `).join("")}
+      </div>
+    `
+    : ""
+  }
+
+</div>
           <h3 onclick="showDetailById('${p.id}')">
            ${p.name}
           </h3>
@@ -1556,7 +1658,42 @@ startHeroSlider();
         c.innerHTML = `
           ${p.discount ? `<div class="discount-badge">-${p.discount}%</div>` : ""}
           ${a === 1 ? `<div class="last-unit">Última unidad</div>` : a <= 0 ? `<div class="out-stock">Agotado</div>` : ""}
-          <img src="${p.image}" loading="lazy" onclick="showDetailById('${p.id}')">
+          <div class="card-slider">
+
+  <div class="card-track" id="track-${p.id}">
+    ${(p.images || [p.image]).map(img => `
+      <img
+        src="${img}"
+        class="card-slide"
+        loading="lazy"
+        onclick="showDetailById('${p.id}')"
+      >
+    `).join("")}
+  </div>
+
+  ${
+    (p.images?.length || 0) > 1
+    ? `
+      <button class="card-arrow left"
+        onclick="event.stopPropagation();prevCardImg('${p.id}')">
+        ‹
+      </button>
+
+      <button class="card-arrow right"
+        onclick="event.stopPropagation();nextCardImg('${p.id}')">
+        ›
+      </button>
+
+      <div class="card-dots" id="dots-${p.id}">
+        ${(p.images || []).map((_,i)=>`
+          <span class="${i===0?'active':''}"></span>
+        `).join("")}
+      </div>
+    `
+    : ""
+  }
+
+</div>
           <h3 onclick="showDetailById('${p.id}')">
       ${p.name}
     </h3>
@@ -1661,7 +1798,57 @@ startHeroSlider();
     }
     
     let moved = false;
+
+    function updateCardSlider(id){
+
+  const track = document.getElementById(`track-${id}`);
+  const dots = document.querySelectorAll(`#dots-${id} span`);
+
+  if(!track) return;
+
+  const index = cardIndexes[id] || 0;
+
+  track.style.transform =
+    `translateX(-${index * 100}%)`;
+
+  dots.forEach((d,i)=>{
+    d.classList.toggle("active", i === index);
+  });
+}
+
+function nextCardImg(id){
+
+  const p = Object.values(DATA)
+    .flat()
+    .find(x => x.id === id);
+
+  if(!p || !p.images) return;
+
+  const total = p.images.length;
+
+  cardIndexes[id] =
+    ((cardIndexes[id] || 0) + 1) % total;
+
+  updateCardSlider(id);
+}
+
+function prevCardImg(id){
+
+  const p = Object.values(DATA)
+    .flat()
+    .find(x => x.id === id);
+
+  if(!p || !p.images) return;
+
+  const total = p.images.length;
+
+  cardIndexes[id] =
+    ((cardIndexes[id] || 0) - 1 + total) % total;
+
+  updateCardSlider(id);
+}
     
+      
     function showDetailById(id){
       const p = Object.values(DATA).flat().find(x => x.id === id);
       if (!p) return;
@@ -2305,6 +2492,8 @@ window.addEventListener("resize", () => {
     window.confirmCheckout = confirmCheckout;
     window.showDetailById = showDetailById;
     window.updateCartQty = updateCartQty;
+    window.nextCardImg = nextCardImg;
+    window.prevCardImg = prevCardImg;
     window.addEventListener("DOMContentLoaded", () => {
   
   const closeBtn = document.getElementById("closeCartBtn");
