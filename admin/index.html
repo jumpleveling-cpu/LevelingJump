@@ -1130,6 +1130,24 @@ function listenProducts(){
       .map(cat => `<option value="${cat}">${cat}</option>`)
       .join("");
 
+products.sort((a,b)=>{
+
+  // 1️⃣ ordenar por categoría
+  const catA = (a.category || "").toLowerCase();
+  const catB = (b.category || "").toLowerCase();
+
+  if(catA < catB) return -1;
+  if(catA > catB) return 1;
+
+  // 2️⃣ ordenar por nombre
+  const nameA = (a.name || "").toLowerCase();
+  const nameB = (b.name || "").toLowerCase();
+
+  return nameA.localeCompare(nameB);
+
+});
+
+    
     // ✅ PASO 2: renderizar filas ya con TODAS las categorías
     products.forEach(p => {
       const tr = document.createElement("tr");
@@ -1192,22 +1210,53 @@ function listenProducts(){
 
 
   const unitsInput = tr.querySelector(".unitsInput");
-  const totalCostInput = tr.querySelector(".totalCostInput");
-  const costInput = tr.querySelector(".costInput");
+const totalCostInput = tr.querySelector(".totalCostInput");
+const costInput = tr.querySelector(".costInput");
 
-  function autoCalcUnitCost(){
-  const units = parseFloat(unitsInput.value);
-  const total = parseFloat(totalCostInput.value);
+/* 🔹 Calcula costo unitario */
+function calcUnitCost(){
 
-  if(units > 0 && total > 0){
+  const units = parseFloat(unitsInput.value) || 0;
+  const total = parseFloat(totalCostInput.value) || 0;
+
+  if(units > 0){
+
     costInput.value = (total / units).toFixed(2);
+
     tr.dataset.changed = "true";
     tr.style.background = "#fff7ed";
   }
 }
 
-unitsInput.oninput = autoCalcUnitCost;
-totalCostInput.oninput = autoCalcUnitCost;
+/* 🔹 Calcula costo total */
+function calcTotalCost(){
+
+  const units = parseFloat(unitsInput.value) || 0;
+  const cost = parseFloat(costInput.value) || 0;
+
+  totalCostInput.value = (units * cost).toFixed(2);
+
+  tr.dataset.changed = "true";
+  tr.style.background = "#fff7ed";
+}
+
+/* Eventos */
+totalCostInput.oninput = calcUnitCost;
+
+unitsInput.oninput = () => {
+
+  // si ya hay costo unitario → recalcula total
+  if(costInput.value){
+    calcTotalCost();
+  }
+
+  // si ya hay total → recalcula costo unitario
+  else if(totalCostInput.value){
+    calcUnitCost();
+  }
+};
+
+costInput.oninput = calcTotalCost;
 
     
     });
